@@ -235,7 +235,8 @@
       if (occ) counts[candidatesById[occ].party]++;
     });
     partyChipsEl.innerHTML = "";
-    ["M", "L", "KD", "SD"].forEach((party) => {
+    const visibleParties = lInParliament ? ["M", "L", "KD", "SD"] : ["M", "KD", "SD"];
+    visibleParties.forEach((party) => {
       const chip = document.createElement("span");
       chip.className = "chip";
       const dot = document.createElement("span");
