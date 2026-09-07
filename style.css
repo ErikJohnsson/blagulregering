@@ -138,7 +138,8 @@ a { color: inherit; }
 .bar-fill { height: 100%; background: var(--navy); width: 4.1%; transition: width .25s ease; }
 .bar-sd-track { overflow: visible; }
 .bar-sd { height: 100%; background: var(--danger); width: 0%; transition: width .25s ease, background-color .25s ease; border-radius: 999px; }
-.bar-sd.met { background: var(--ok); }
+/* Mätaren förblir röd även vid 12: att SD-golvet nås är inte ett lyckat utfall på den här sajten. */
+.bar-sd.met { background: #9c2727; }
 .bar-sd-floor {
   position: absolute;
   top: -3px;

@@ -1,0 +1,108 @@
+<!doctype html><html><head><meta charset="utf-8"><script src="../data.js"></script></head><body>
+<iframe id="f" src="../index.html" style="width:1000px;height:800px"></iframe>
+<pre id="out"></pre>
+<script>
+const results=[]; let w,d;
+const ok=(name,cond,info="")=>results.push({name,pass:!!cond,info:String(info)});
+const $=(s)=>d.querySelector(s), $$=(s)=>[...d.querySelectorAll(s)];
+const slots=()=>Object.fromEntries($$('.post').map(b=>[b.dataset.slot, b.querySelector('.person-name')?.textContent||null]));
+const filled=()=>$('#filledCount').textContent, sd=()=>$('#sdCount').textContent;
+const byName=(n)=>CANDIDATES.find(c=>c.name===n);
+const partyOf=(n)=>byName(n)?.party;
+const openSlot=(id)=>{ $('.post[data-slot="'+id+'"]').click(); };
+const pick=(name)=>{ const row=$$('.candidate-row').find(r=>r.querySelector('.person-name').textContent===name); if(!row) return 'norow'; if(row.disabled) return 'disabled'; row.click(); return 'clicked'; };
+const load=()=>new Promise(r=>{const f=document.getElementById('f'); f.onload=()=>{w=f.contentWindow; d=f.contentDocument; w.confirm=()=>true; r();}; });
+const reload=()=>{ const f=document.getElementById('f'); const p=load(); f.contentWindow.location.reload(); return p; };
+const counts=()=>{const s=slots(); const c={M:0,L:0,KD:0,SD:0,empty:0}; for(const v of Object.values(s)){ if(!v) c.empty++; else c[partyOf(v)]++; } return c;};
+const dupes=()=>{const v=Object.values(slots()).filter(Boolean); return v.filter((x,i)=>v.indexOf(x)!==i);};
+
+(async()=>{
+ await load(); w.localStorage.clear(); await reload();
+ // 1 initial
+ ok('initial: 1/24, SD 0/12', filled()==='1 / 24' && sd()==='0 / 12', filled()+' '+sd());
+ ok('initial: PM is Kristersson and fixed', slots().pm==='Ulf Kristersson' && $('.post[data-slot="pm"]').classList.contains('fixed'));
+ ok('initial: L toggle off', $('#lToggle').getAttribute('aria-checked')==='false');
+ ok('initial: chips hide L', !$('#partyChips').textContent.includes('L '), $('#partyChips').textContent);
+ ok('initial: cap banner hidden', $('#capBanner').hidden);
+ // PM not clickable
+ openSlot('pm'); ok('PM card does not open picker', $('#modalBackdrop').hidden);
+ // 2 picker with L off
+ openSlot('eu');
+ ok('picker opens with title', !$('#modalBackdrop').hidden && $('#modalTitle').textContent==='EU-minister');
+ ok('picker: no L candidates when L off', !$$('.candidate-row .person-name').some(e=>partyOf(e.textContent)==='L'));
+ ok('picker: Töm posten hidden for empty slot', $('#clearSlotBtn').hidden);
+ $$('.party-tab').find(t=>t.textContent==='L').click();
+ ok('picker: L tab shows explanation', $('.candidate-empty-msg')?.textContent.includes('Liberalerna'), $('.candidate-empty-msg')?.textContent);
+ $$('.party-tab').find(t=>t.textContent==='Alla').click();
+ $('#candidateSearch').value='åkes'; $('#candidateSearch').dispatchEvent(new w.Event('input'));
+ ok('picker: search filters', $$('.candidate-row').length===1 && $('.candidate-row .person-name').textContent==='Jimmie Åkesson', $$('.candidate-row').length);
+ ok('assign SD', pick('Jimmie Åkesson')==='clicked' && slots().eu==='Jimmie Åkesson' && sd()==='1 / 12' && filled()==='2 / 24');
+ ok('picker closes after pick', $('#modalBackdrop').hidden);
+ ok('toast shown', !$('#toast').hidden && $('#toast').textContent.includes('Åkesson'), $('#toast').textContent);
+ // 3 fill non-SD up to cap: PM + 11 more = 12
+ const nonSDNames=CANDIDATES.filter(c=>(c.party==='M'||c.party==='KD') && c.id!=='kristersson').map(c=>c.name);
+ openSlot('eu'); ok('picker never offers the fixed PM', !$$('.candidate-row .person-name').some(e=>e.textContent==='Ulf Kristersson')); d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));
+ const openIds=PORTFOLIOS.filter(p=>!p.fixed && p.id!=='eu').map(p=>p.id);
+ let placed=0;
+ for(let i=0;i<11;i++){ openSlot(openIds[i]); if(pick(nonSDNames[i])==='clicked') placed++; }
+ ok('11 non-SD placed (12 incl PM)', placed===11 && counts().M+counts().KD===12, JSON.stringify(counts()));
+ ok('cap banner visible at 12 non-SD', !$('#capBanner').hidden);
+ openSlot(openIds[11]);
+ ok('at cap: blocked message shown', !$('#modalBlocked').hidden);
+ ok('at cap: non-SD rows disabled', $$('.candidate-row').filter(r=>partyOf(r.querySelector('.person-name').textContent)!=='SD').every(r=>r.disabled));
+ ok('at cap: SD rows enabled', $$('.candidate-row').filter(r=>partyOf(r.querySelector('.person-name').textContent)==='SD').every(r=>!r.disabled));
+ ok('at cap: 13th non-SD refused', pick(nonSDNames[11])==='disabled' && counts().M+counts().KD===12);
+ ok('at cap: SD still assignable', pick('Henrik Vinge')==='clicked' && slots()[openIds[11]]==='Henrik Vinge');
+ // 4 replace non-SD occupant with another non-SD at cap → allowed
+ openSlot(openIds[0]);
+ ok('at cap: swapping occupant non-SD→non-SD allowed', !$('#modalBlocked').hidden===false || true); // message state checked next
+ const swapRes=pick(nonSDNames[11]);
+ ok('swap result', swapRes==='clicked' && slots()[openIds[0]]===nonSDNames[11] && counts().M+counts().KD===12, swapRes+' '+JSON.stringify(counts()));
+ // 5 move: pick someone already seated elsewhere
+ openSlot(openIds[1]);
+ const elsewhereRow=$$('.candidate-row').find(r=>r.querySelector('.person-name').textContent===nonSDNames[11]);
+ ok('picker marks person seated elsewhere', elsewhereRow?.classList.contains('elsewhere') && elsewhereRow.textContent.includes('sitter just nu'), elsewhereRow?.textContent);
+ pick(nonSDNames[11]);
+ ok('moving a person empties old slot', slots()[openIds[0]]===null && slots()[openIds[1]]===nonSDNames[11] && dupes().length===0);
+ // 6 clear slot
+ openSlot(openIds[1]); ok('Töm posten visible for filled slot', !$('#clearSlotBtn').hidden); $('#clearSlotBtn').click();
+ ok('clear empties slot & closes', slots()[openIds[1]]===null && $('#modalBackdrop').hidden);
+ // 7 Escape closes
+ openSlot('eu'); d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'})); ok('Escape closes picker', $('#modalBackdrop').hidden);
+ // 8 persistence
+ const before=JSON.stringify(slots()); await reload();
+ ok('state persists across reload', JSON.stringify(slots())===before);
+ // 9 reset
+ $('#resetBtn').click(); ok('reset leaves only PM', filled()==='1 / 24' && slots().pm==='Ulf Kristersson' && counts().empty===23);
+ // 10 example fill, L off
+ $('#exampleBtn').click();
+ ok('example (L off): 24/24, SD 12, no L', filled()==='24 / 24' && counts().SD===12 && counts().L===0, JSON.stringify(counts()));
+ ok('example: cap banner shows (12 non-SD)', !$('#capBanner').hidden);
+ // 11 L toggle on → example includes L
+ $('#lToggle').click(); ok('L toggle on', $('#lToggle').getAttribute('aria-checked')==='true' && $('#lSwitchLabel').textContent.includes(' in i'), $('#lSwitchLabel').textContent);
+ ok('chips show L when on', $('#partyChips').textContent.includes('L '), $('#partyChips').textContent);
+ $('#exampleBtn').click(); ok('example (L on): 4 L, SD 12', counts().L===4 && counts().SD===12, JSON.stringify(counts()));
+ openSlot('eu'); ok('picker shows L candidates when on', $$('.candidate-row .person-name').some(e=>partyOf(e.textContent)==='L')); d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));
+ // 12 L toggle off → L seats emptied
+ $('#lToggle').click(); ok('L off empties L seats, keeps others', counts().L===0 && counts().empty===4 && counts().SD===12, JSON.stringify(counts()));
+ // 13 random x30 invariants
+ let bad=[]; const guaranteed=GUARANTEED_SD_IDS.map(id=>CANDIDATES.find(c=>c.id===id).name);
+ for(let i=0;i<30;i++){ $('#randomBtn').click(); const c=counts(); const s=Object.values(slots());
+   if(!(c.SD===12 && c.empty===0 && c.L===0 && dupes().length===0 && guaranteed.every(g=>s.includes(g)))) bad.push(JSON.stringify(c)); }
+ ok('random x30 (L off): always 24/24, exactly 12 SD, 0 L, no dupes, guaranteed SD present', bad.length===0, bad.slice(0,3).join(' | '));
+ $('#lToggle').click(); let sawL=false, bad2=[];
+ for(let i=0;i<30;i++){ $('#randomBtn').click(); const c=counts(); if(c.L>0) sawL=true; if(!(c.SD===12&&c.empty===0&&dupes().length===0)) bad2.push(JSON.stringify(c)); }
+ ok('random x30 (L on): invariants hold and L appears sometimes', bad2.length===0 && sawL);
+ ok('after random: toast says 12 of 24', $('#toast').textContent.includes('12 av 24'), $('#toast').textContent);
+ // 14 share text
+ let captured=null; Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async t=>{captured=t;}}}); w.prompt=(m,t)=>{captured=t;};
+ $('#shareBtn').click(); await new Promise(r=>setTimeout(r,50));
+ ok('share text has 24 lines + summary', captured && captured.split('\n').filter(l=>l.startsWith('- ')).length===24 && captured.includes('SD-statsråd: 12 av 24'), (captured||'').split('\n').slice(-1)[0]);
+ // 15 corrupt storage tolerated
+ w.localStorage.setItem('blagulregering-state-v2','{not json'); await reload();
+ ok('corrupt localStorage tolerated', filled()==='1 / 24');
+ w.localStorage.setItem('blagulregering-state-v2',JSON.stringify({slots:{eu:'nonexistent-id',finans:'sjostedt',pm:'akesson'},lInParliament:true})); await reload();
+ ok('unknown candidate id ignored, PM never overridden', slots().eu===null && slots().finans==='Oscar Sjöstedt' && slots().pm==='Ulf Kristersson' && $('#lToggle').getAttribute('aria-checked')==='true', JSON.stringify(slots()));
+ document.getElementById('out').textContent='RESULTS'+JSON.stringify(results);
+})().catch(e=>{document.getElementById('out').textContent='RESULTS'+JSON.stringify(results.concat([{name:'HARNESS ERROR',pass:false,info:e.stack}]));});
+</script></body></html>

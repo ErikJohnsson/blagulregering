@@ -15,6 +15,9 @@ statsråd måste vara SD. Läs `README.md` för hur logiken fungerar.
   kampanjsajt om verkliga personer.
 
 ## Verifiering
+- `npm test` kör 44 end-to-end-tester mot den riktiga sidan i headless Chrome (`test/run.sh`).
+  Kör alltid efter ändringar i `script.js`, `data.js` eller `index.html`. Lägg till ett test i
+  `test/logic-test.html` när du lagar en bugg eller lägger till en regel.
 - `node --check script.js && node --check data.js` efter varje JS-ändring.
 - Om `data.js` ändras: kontrollera att alla id:n i `EXAMPLE_FILL`, `EXAMPLE_FILL_NO_L_OVERRIDES`
   och `GUARANTEED_SD_IDS` finns i `CANDIDATES`, och att `EXAMPLE_FILL` ger exakt 12 SD.

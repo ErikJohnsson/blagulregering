@@ -11,6 +11,10 @@
   const portfoliosById = {};
   PORTFOLIOS.forEach((p) => (portfoliosById[p.id] = p));
 
+  // Personer som är låsta till en post (statsministern) får aldrig erbjudas eller
+  // slumpas till någon annan post.
+  const fixedCandidateIds = new Set(PORTFOLIOS.filter((p) => p.fixed).map((p) => p.fixed));
+
   // state: slotId -> candidateId | null
   let state = {};
   PORTFOLIOS.forEach((p) => (state[p.id] = p.fixed || null));
@@ -52,6 +56,7 @@
   }
 
   function isCandidateAvailable(c) {
+    if (fixedCandidateIds.has(c.id)) return false;
     return lInParliament || c.party !== "L";
   }
 
@@ -87,6 +92,7 @@
 
   function canAssign(slotId, candidateId) {
     const candidate = candidatesById[candidateId];
+    if (!candidate || portfoliosById[slotId].fixed || fixedCandidateIds.has(candidateId)) return false;
     if (candidate.party === "SD") return true;
     const oldSlotId = findSlotOfCandidate(candidateId);
     const excludes = [slotId];
@@ -249,6 +255,13 @@
 
     const nonSDNow = countNonSD([]);
     capBannerEl.hidden = nonSDNow < NON_SD_CAP;
+    capBannerEl.textContent =
+      filled === TOTAL
+        ? `Regeringen är komplett: ${sd} av ${TOTAL} statsråd är SD. Så många måste det bli om ` +
+          `Ulf Kristersson ska kunna fortsätta som statsminister.`
+        : "Taket är nått: 12 av 24 platser (inklusive statsministern) är redan icke-SD. " +
+          "Ska Ulf kunna bilda regering måste minst 12 statsråd vara SD — nästa lediga post " +
+          "kan bara gå till Sverigedemokraterna.";
   }
 
   function renderAll() {
@@ -535,6 +548,7 @@
     lines.push("");
     lines.push(`SD-statsråd: ${sd} av ${TOTAL} (${filled} poster tillsatta totalt)`);
     const text = lines.join("\n");
+    const textWithLink = text + "\n\nBygg din egen: https://blagulregering.se";
 
     // På mobil: öppna systemets delningsmeny (Messenger, X, Signal …). Annars: urklipp.
     if (navigator.share) {
@@ -546,10 +560,10 @@
       }
     }
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(textWithLink);
       showToast("Sammanfattningen är kopierad till urklipp.");
     } catch (e) {
-      window.prompt("Kopiera manuellt:", text);
+      window.prompt("Kopiera manuellt:", textWithLink);
     }
   });
 

@@ -51,8 +51,11 @@ rubriker/ingress/footer). Kandidat-id:n måste vara unika och alla id:n i `EXAMP
 Snabb kontroll efter ändring:
 
 ```sh
-node --check data.js && node --check script.js
+npm test          # 44 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
 ```
+
+Testerna i `test/logic-test.html` laddar den riktiga sidan i en iframe och klickar sig igenom
+spärren, flytt av personer, L-brytaren, slump, exempel, delning och sparat tillstånd.
 
 ## Publicera på Loopia
 

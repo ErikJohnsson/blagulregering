@@ -4,7 +4,8 @@
   "private": true,
   "description": "Bygg din egen M-L-KD-SD-regering",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "bash test/run.sh"
   },
   "engines": {
     "node": ">=18"
