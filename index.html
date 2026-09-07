@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bygg regeringen</title>
+<meta name="description" content="Bygg din egen Kristersson-regering av troliga statsråd från M, L, KD och SD – med en hård spärr: minst 12 av 24 statsråd måste bli SD.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <p class="kicker">Blågul regering — ett interaktivt tankeexperiment</p>
+    <h1>Vem ska sitta i Ulfs nästa regering?</h1>
+    <p class="lede">
+      Sätt ihop en trolig M–L–KD–SD-regering själv, statsråd för statsråd, med samma
+      24 ministerposter som regeringen har idag. Enda regeln: precis som i verkligheten
+      finns det ett tak för hur många poster M, L och KD kan dela på. Resten
+      <strong>måste</strong> bli Sverigedemokraterna.
+    </p>
+  </div>
+</header>
+
+<div class="statusbar" id="statusbar">
+  <div class="wrap statusbar-inner">
+
+    <div class="status-block">
+      <div class="status-row">
+        <span class="status-label">Tillsatta poster</span>
+        <span class="status-value" id="filledCount">1 / 24</span>
+      </div>
+      <div class="bar bar-fill-track">
+        <div class="bar-fill" id="filledBar"></div>
+      </div>
+    </div>
+
+    <div class="status-block sd-block">
+      <div class="status-row">
+        <span class="status-label">SD-statsråd <span class="min-tag">(hård gräns: minst 12)</span></span>
+        <span class="status-value" id="sdCount">0 / 12</span>
+      </div>
+      <div class="bar bar-sd-track">
+        <div class="bar-sd" id="sdBar"></div>
+        <div class="bar-sd-floor" style="left:50%"></div>
+      </div>
+    </div>
+
+    <div class="party-chips" id="partyChips" aria-label="Partifördelning"></div>
+
+    <div class="status-actions">
+      <button class="btn btn-ghost" id="exampleBtn" type="button">Testa ett troligt förslag</button>
+      <button class="btn btn-ghost" id="shareBtn" type="button">Sammanfatta &amp; kopiera</button>
+      <button class="btn btn-ghost btn-danger" id="resetBtn" type="button">Nollställ</button>
+    </div>
+  </div>
+</div>
+
+<div class="capbanner" id="capBanner" hidden>
+  Taket är nått: 12 av 24 platser (inklusive statsministern) är redan icke-SD.
+  Ska Ulf kunna bilda regering måste minst 12 statsråd vara SD — nästa lediga post
+  kan bara gå till Sverigedemokraterna.
+</div>
+
+<main class="wrap" id="departments"></main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      Ministerposterna är hämtade från regeringen Kristerssons nuvarande departement och
+      statsrådstitlar. Kandidatpoolen är ett urval av framträdande riksdagsledamöter,
+      partiledningar, gruppledare och talespersoner för M, L, KD och SD — inte en komplett
+      lista över alla riksdagsledamöter, och ingen prognos från partierna själva. Personerna
+      har inte tillfrågats om och samtyckt till någon specifik post; detta är ett
+      kommunikationsverktyg för att visa hur få platser som faktiskt finns kvar till M, L och
+      KD om Sverigedemokraterna ska släppa fram en statsminister.
+    </p>
+  </div>
+</footer>
+
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalTitle">Välj statsråd</h2>
+        <p class="modal-sub" id="modalSub"></p>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Stäng">&times;</button>
+    </div>
+
+    <div class="modal-blocked" id="modalBlocked" hidden>
+      Taket för icke-SD-platser (12 av 24, inklusive statsministern) är nått. Den här
+      posten kan bara tillsättas med en SD-kandidat — eller så frigör du en annan
+      icke-SD-post först.
+    </div>
+
+    <div class="modal-controls">
+      <input type="search" id="candidateSearch" placeholder="Sök namn…" autocomplete="off">
+      <div class="party-tabs" id="partyTabs"></div>
+    </div>
+
+    <ul class="candidate-list" id="candidateList"></ul>
+
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="clearSlotBtn" type="button">Töm posten</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
