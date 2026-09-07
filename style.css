@@ -403,6 +403,23 @@ a { color: inherit; }
 }
 
 @media (max-width: 720px) {
-  .statusbar-inner { grid-template-columns: 1fr; }
-  .status-actions { justify-content: flex-start; }
+  /* Kompakt klistrig statusrad på mobil: två mätare sida vid sida, chips på en rad,
+     knappar i en horisontellt scrollbar rad. Håller raden under ~150 px hög. */
+  .statusbar-inner { grid-template-columns: 1fr 1fr; gap: 8px 14px; padding: 10px 16px; }
+  .status-block { min-width: 0; }
+  .status-row { font-size: 12px; }
+  .min-tag { display: none; }
+  .party-chips { grid-column: 1 / -1; }
+  .status-actions {
+    grid-column: 1 / -1;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 0 16px 2px;
+  }
+  .status-actions::-webkit-scrollbar { display: none; }
+  .status-actions .btn { flex: none; }
 }

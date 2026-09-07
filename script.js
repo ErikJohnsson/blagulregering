@@ -536,6 +536,15 @@
     lines.push(`SD-statsråd: ${sd} av ${TOTAL} (${filled} poster tillsatta totalt)`);
     const text = lines.join("\n");
 
+    // På mobil: öppna systemets delningsmeny (Messenger, X, Signal …). Annars: urklipp.
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, text, url: location.href });
+        return;
+      } catch (e) {
+        if (e && e.name === "AbortError") return; // användaren avbröt
+      }
+    }
     try {
       await navigator.clipboard.writeText(text);
       showToast("Sammanfattningen är kopierad till urklipp.");

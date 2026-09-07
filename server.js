@@ -16,8 +16,10 @@ const PUBLIC_FILES = new Set([
   "/script.js",
   "/data.js",
   "/favicon.svg",
+  "/apple-touch-icon.png",
   "/og-image.png",
   "/robots.txt",
+  "/sitemap.xml",
 ]);
 
 const MIME = {

@@ -53,3 +53,33 @@ Snabb kontroll efter ändring:
 ```sh
 node --check data.js && node --check script.js
 ```
+
+## Publicera på Loopia
+
+Sajten är statisk, så den läggs direkt i webbhotellets `public_html`. Filer som ska upp:
+
+`index.html  style.css  script.js  data.js  favicon.svg  apple-touch-icon.png  og-image.png  robots.txt  sitemap.xml  .htaccess`
+
+`server.js`, `package.json`, `assets-src/`, `README.md`, `CLAUDE.md` och `deploy.sh` ska **inte** upp.
+
+### Första gången
+1. Registrera domänen `blagulregering.se` och koppla den till webbhotellet i Loopia Kundzon.
+2. Aktivera SSL-certifikat (Let's Encrypt) för domänen under *Webbhotell > SSL*.
+3. Skapa/hämta FTP-uppgifter under *Webbhotell > FTP-konton*.
+4. Se till att domänen pekar på mappen `public_html` (standard).
+
+### Varje deploy
+```sh
+LOOPIA_USER='ditt-ftp-konto' LOOPIA_PASS='lösenord' ./deploy.sh
+```
+Skriptet syntaxkollar JS, kräver TLS mot FTP-servern och laddar upp exakt fillistan ovan.
+Alternativ: dra samma filer till `public_html` i Loopias filhanterare eller i en FTP-klient.
+
+### Delningsbild
+`og-image.png` (1200×630) renderas från `assets-src/og-image.html` med headless Chrome:
+```sh
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
+  --hide-scrollbars --window-size=1200,630 --screenshot="$PWD/og-image.png" "file://$PWD/assets-src/og-image.html"
+```
+Ändra texten i HTML-filen och kör om. Facebook/LinkedIn cachar bilden; använd deras
+"sharing debugger" för att tömma cachen efter en ändring.
