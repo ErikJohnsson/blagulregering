@@ -163,7 +163,8 @@ const GUARANTEED_SD_IDS = [
 
 // En illustrativ, plausibel fyllning som visar hur få av dagens (M/L/KD) statsråd som
 // får plats när minst 12 poster måste bli SD. De 11 icke-SD-posterna behåller här sina
-// nuvarande innehavare — de 12 SD-posterna tar över resten, inklusive Försvars-,
+// nuvarande innehavare (Ebba Busch, som partiledare och vice statsminister, hålls kvar
+// på sin nuvarande post) — de 12 SD-posterna tar över resten, inklusive Försvars-,
 // Justitie- och Utrikesdepartementet.
 const EXAMPLE_FILL = {
   eu:        "aspling",
@@ -176,14 +177,14 @@ const EXAMPLE_FILL = {
   civforsvar:"stenkvist",
   justitie:  "tobiasandersson",
   migration: "jomshof",
-  energi:    "palmqvist",
+  energi:    "busch",
   klimat:    "pourmokhtari",
   kultur:    "broman",
   landsbygd: "kullgren",
   infra:     "andreascarlson",
   social:    "forssmed",
   aldre:     "kronlid",
-  socialtj:  "walterssongronvall",
+  socialtj:  "palmqvist",
   sjukvard:  "lann",
   utbintegr: "mohamsson",
   gymhogsk:  "edholm",
