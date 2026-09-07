@@ -19,6 +19,15 @@
       finns det ett tak för hur många poster M, L och KD kan dela på. Resten
       <strong>måste</strong> bli Sverigedemokraterna.
     </p>
+
+    <div class="lswitch-row">
+      <button type="button" class="switch" id="lToggle" role="switch" aria-checked="false">
+        <span class="switch-thumb"></span>
+      </button>
+      <label for="lToggle" class="lswitch-label" id="lSwitchLabel">
+        Liberalerna tog sig <strong>inte</strong> in i riksdagen 2026
+      </label>
+    </div>
   </div>
 </header>
 
@@ -49,6 +58,7 @@
     <div class="party-chips" id="partyChips" aria-label="Partifördelning"></div>
 
     <div class="status-actions">
+      <button class="btn btn-primary" id="randomBtn" type="button">Slumpa fram kandidater</button>
       <button class="btn btn-ghost" id="exampleBtn" type="button">Testa ett troligt förslag</button>
       <button class="btn btn-ghost" id="shareBtn" type="button">Sammanfatta &amp; kopiera</button>
       <button class="btn btn-ghost btn-danger" id="resetBtn" type="button">Nollställ</button>

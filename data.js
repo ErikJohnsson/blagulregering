@@ -147,6 +147,18 @@ const CANDIDATES = [
   { id: "angelikabengtsson",  name: "Angelika Bengtsson",        party: "SD", role: "Idrottspolitik" },
   { id: "gille",              name: "Sara Gille",                party: "SD", role: "Riksdagsledamot" },
   { id: "christiansson",      name: "Alexander Christiansson",   party: "SD", role: "Riksdagsledamot" },
+  { id: "stegrud",            name: "Jessica Stegrud",           party: "SD", role: "Migrations- och rättspolitik" },
+];
+
+// Namn som alltid ska ingå vid slumpmässig tillsättning ("Slumpa fram kandidater").
+const GUARANTEED_SD_IDS = [
+  "jomshof",
+  "akesson",
+  "soder_bjorn",
+  "aspling",
+  "stegrud",
+  "emilsson",
+  "mattiaskarlsson",
 ];
 
 // En illustrativ, plausibel fyllning som visar hur få av dagens (M/L/KD) statsråd som
@@ -177,4 +189,14 @@ const EXAMPLE_FILL = {
   gymhogsk:  "edholm",
   utrikes:   "soder_bjorn",
   bistand:   "dousa",
+};
+
+// Ersätter L-innehavarna i EXAMPLE_FILL med M/KD-namn när Liberalerna är avstängda
+// (dvs. inte "tog sig in i riksdagen"), så exempelregeringen aldrig visar L-personer
+// i det läget.
+const EXAMPLE_FILL_NO_L_OVERRIDES = {
+  jamstalld: "rinaldomiller",
+  klimat:    "ottosson",
+  utbintegr: "hjalmered",
+  gymhogsk:  "warnick",
 };

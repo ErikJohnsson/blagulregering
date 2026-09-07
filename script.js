@@ -15,19 +15,26 @@
   let state = {};
   PORTFOLIOS.forEach((p) => (state[p.id] = p.fixed || null));
 
-  const STORAGE_KEY = "blagulregering-state-v1";
+  // Om Liberalerna antas ha kommit in i riksdagen 2026. Av förvalt läge: nej.
+  let lInParliament = false;
+
+  const STORAGE_KEY = "blagulregering-state-v2";
 
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
+      const savedSlots = saved.slots || {};
       PORTFOLIOS.forEach((p) => {
         if (p.fixed) return;
-        if (saved[p.id] && candidatesById[saved[p.id]]) {
-          state[p.id] = saved[p.id];
+        if (savedSlots[p.id] && candidatesById[savedSlots[p.id]]) {
+          state[p.id] = savedSlots[p.id];
         }
       });
+      if (typeof saved.lInParliament === "boolean") {
+        lInParliament = saved.lInParliament;
+      }
     } catch (e) {
       /* ignore corrupt storage */
     }
@@ -35,10 +42,17 @@
 
   function saveState() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ slots: state, lInParliament })
+      );
     } catch (e) {
       /* ignore quota errors */
     }
+  }
+
+  function isCandidateAvailable(c) {
+    return lInParliament || c.party !== "L";
   }
 
   function findSlotOfCandidate(candidateId) {
@@ -308,6 +322,7 @@
         NON_SD_CAP;
 
     let list = CANDIDATES.filter((c) => {
+      if (!isCandidateAvailable(c)) return false;
       if (activePartyFilter !== "ALL" && c.party !== activePartyFilter) return false;
       if (query && !c.name.toLowerCase().includes(query)) return false;
       return true;
@@ -320,7 +335,10 @@
     if (list.length === 0) {
       const li = document.createElement("li");
       li.className = "candidate-empty-msg";
-      li.textContent = "Inga kandidater matchar.";
+      li.textContent =
+        !lInParliament && (activePartyFilter === "L" || activePartyFilter === "ALL")
+          ? "Liberalerna är avstängda — slå på \"L kom in i riksdagen\" högst upp för att välja L-kandidater."
+          : "Inga kandidater matchar.";
       candidateListEl.appendChild(li);
     }
 
@@ -415,6 +433,33 @@
     toastTimer = setTimeout(() => (toastEl.hidden = true), 2600);
   }
 
+  // ---------- L-toggle ----------
+
+  const lToggle = document.getElementById("lToggle");
+  const lSwitchLabel = document.getElementById("lSwitchLabel");
+
+  function renderLToggle() {
+    lToggle.setAttribute("aria-checked", String(lInParliament));
+    lSwitchLabel.innerHTML = lInParliament
+      ? 'Liberalerna tog sig <strong>in</strong> i riksdagen 2026'
+      : 'Liberalerna tog sig <strong>inte</strong> in i riksdagen 2026';
+  }
+
+  lToggle.addEventListener("click", () => {
+    lInParliament = !lInParliament;
+    if (!lInParliament) {
+      // Liberalerna åker ur riksdagen: töm alla poster som just nu innehas av L.
+      PORTFOLIOS.forEach((p) => {
+        if (p.fixed) return;
+        const occ = state[p.id];
+        if (occ && candidatesById[occ].party === "L") state[p.id] = null;
+      });
+    }
+    saveState();
+    renderLToggle();
+    renderAll();
+  });
+
   // ---------- top actions ----------
 
   document.getElementById("resetBtn").addEventListener("click", () => {
@@ -427,13 +472,53 @@
   });
 
   document.getElementById("exampleBtn").addEventListener("click", () => {
+    const overrides = lInParliament ? {} : EXAMPLE_FILL_NO_L_OVERRIDES;
     PORTFOLIOS.forEach((p) => {
       if (p.fixed) return;
-      state[p.id] = EXAMPLE_FILL[p.id] || null;
+      state[p.id] = overrides[p.id] || EXAMPLE_FILL[p.id] || null;
     });
     saveState();
     renderAll();
     showToast("Ett troligt förslag är ifyllt — 12 av 24 statsråd är nu SD.");
+  });
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  document.getElementById("randomBtn").addEventListener("click", () => {
+    const openSlots = shuffle(PORTFOLIOS.filter((p) => !p.fixed).map((p) => p.id));
+
+    const guaranteedSD = GUARANTEED_SD_IDS.filter((id) => candidatesById[id]);
+    const otherSD = shuffle(
+      CANDIDATES.filter((c) => c.party === "SD" && !guaranteedSD.includes(c.id)).map((c) => c.id)
+    );
+    const neededMoreSD = Math.max(0, SD_FLOOR - guaranteedSD.length);
+    const sdPicks = guaranteedSD.concat(otherSD.slice(0, neededMoreSD));
+
+    const nonSDSlotCount = openSlots.length - sdPicks.length; // = NON_SD_CAP - 1 (pm)
+    const nonSDPool = shuffle(
+      CANDIDATES.filter((c) => c.party !== "SD" && isCandidateAvailable(c)).map((c) => c.id)
+    );
+    const nonSDPicks = nonSDPool.slice(0, nonSDSlotCount);
+
+    const allPicks = shuffle(sdPicks.concat(nonSDPicks));
+
+    PORTFOLIOS.forEach((p) => {
+      if (!p.fixed) state[p.id] = null;
+    });
+    openSlots.forEach((slotId, i) => {
+      state[slotId] = allPicks[i] || null;
+    });
+
+    saveState();
+    renderAll();
+    showToast(`Regeringen är slumpad — ${countSD()} av ${TOTAL} statsråd är SD.`);
   });
 
   document.getElementById("shareBtn").addEventListener("click", async () => {
@@ -461,5 +546,6 @@
   // ---------- init ----------
 
   loadState();
+  renderLToggle();
   renderAll();
 })();

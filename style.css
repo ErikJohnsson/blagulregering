@@ -61,6 +61,46 @@ a { color: inherit; }
 }
 .lede strong { color: var(--gold); }
 
+.lswitch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.switch {
+  flex: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.12);
+  padding: 2px;
+  cursor: pointer;
+  position: relative;
+}
+.switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #cfd7e6;
+  transition: transform .18s ease, background-color .18s ease;
+}
+.switch[aria-checked="true"] {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.switch[aria-checked="true"] .switch-thumb {
+  transform: translateX(18px);
+  background: var(--navy);
+}
+.lswitch-label {
+  font-size: 13.5px;
+  color: #d7dfef;
+  cursor: pointer;
+}
+.lswitch-label strong { color: #fff; }
+
 /* Status bar */
 .statusbar {
   position: sticky;
