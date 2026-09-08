@@ -151,7 +151,7 @@ const CANDIDATES = [
     quote: { text: "Seger eller döden.", source: "Facebook, 2018", url: "https://www.svt.se/nyheter/inrikes/sd-topps-inlagg-pa-sociala-medier-moter-stark-kritik" } },
   { id: "marttinen",          name: "Adam Marttinen",            party: "SD", role: "Rättspolitik" },
   { id: "aspling",            name: "Ludvig Aspling",            party: "SD", role: "Utrikes- och EU-politik",
-    quote: { text: "Vi har alldeles för många som inte är en del av den etniskt svenska befolkningen.", source: "Kvartal", url: "https://www.etc.se/inrikes/aspling-sd-efter-utspelet-saa-laangt-aer-sd-beredda-att-gaa" } },
+    quote: { text: "Vi har alldeles för många som inte är en del av den etniskt svenska befolkningen.", source: "Kvartal", url: "https://kvartal.se/nyheter/artiklar/sd-spricka-efter-asplings-ord-om-etniska-svenskar/cG9zdDoxNTEyMDg" } },
   { id: "quensel",            name: "Charlotte Quensel",         party: "SD", role: "Riksdagsledamot" },
   { id: "eskilandersson",     name: "Mikael Eskilandersson",     party: "SD", role: "Konstitutionella frågor" },
   { id: "fromutterstedt",     name: "Ann-Christine From Utterstedt", party: "SD", role: "Äldrefrågor" },
