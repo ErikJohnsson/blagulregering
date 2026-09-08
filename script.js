@@ -62,7 +62,7 @@
   let wasComplete = false;
   let wasAtCap = false;
 
-  const STORAGE_KEY = "blagulregering-state-v3";
+  const STORAGE_KEY = "blagulregering-state-v4";
 
   // ---------- URL-tillstånd ----------
   // Regeringen kodas i adressens hash så att en delad länk öppnar samma resultat.

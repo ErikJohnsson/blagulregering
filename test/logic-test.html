@@ -140,9 +140,9 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  $('#shareBtn').click(); for(let i=0;i<40 && !captured;i++) await new Promise(r=>setTimeout(r,50));
  ok('share copies URL with hash', captured && captured.startsWith('https://blagulregering.se/#g=') && captured.length > 40, captured);
  // 16 storage edge cases
- w.localStorage.setItem('blagulregering-state-v3','{not json'); await reload();
+ w.localStorage.setItem('blagulregering-state-v4','{not json'); await reload();
  ok('corrupt localStorage tolerated', filled()==='1 / 24');
- w.localStorage.setItem('blagulregering-state-v3',JSON.stringify({slots:{eu:'nonexistent-id',finans:'sjostedt',pm:'akesson'},lInParliament:true})); await reload();
+ w.localStorage.setItem('blagulregering-state-v4',JSON.stringify({slots:{eu:'nonexistent-id',finans:'sjostedt',pm:'akesson'},lInParliament:true})); await reload();
  ok('unknown candidate id ignored, PM never overridden', slots().eu===null && slots().finans==='Oscar Sjöstedt' && slots().pm==='Ulf Kristersson' && $('#lToggle').getAttribute('aria-checked')==='true', JSON.stringify(slots()));
  document.getElementById('out').textContent='RESULTS'+JSON.stringify(results);
 })().catch(e=>{document.getElementById('out').textContent='RESULTS'+JSON.stringify(results.concat([{name:'HARNESS ERROR',pass:false,info:e.stack}]));});

@@ -13,7 +13,7 @@ i besökarens webbläsare via `localStorage`.
 | Fil          | Innehåll |
 |--------------|----------|
 | `index.html` | Sidans struktur: header med L-brytare, klistrig statusrad, `<main id="departments">` som fylls av JS, footer, väljar-modal, toast. |
-| `data.js`    | **Allt politiskt innehåll.** Partier + färger, de 24 ministerposterna, kandidatpoolen (93 personer), exempelregeringen och listan över SD-namn som alltid slumpas in. Globala `const`-variabler som `script.js` läser. |
+| `data.js`    | **Allt politiskt innehåll.** Partier + färger, de 24 ministerposterna, kandidatpoolen (90 personer), exempelregeringen och listan över SD-namn som alltid slumpas in. Globala `const`-variabler som `script.js` läser. |
 | `script.js`  | All logik och rendering. En enda IIFE, inga beroenden. |
 | `style.css`  | All styling. Ljust tema, CSS-variabler i `:root`. Rubriker i Archivo Black (självhostad i `fonts/`), övrig text i systemtypsnitt. **Gult betyder alltid SD**; använd aldrig `--gold` som dekor. |
 | `test/`      | End-to-end-tester (`npm test`), se nedan. |
