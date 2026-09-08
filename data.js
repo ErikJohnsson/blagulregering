@@ -135,7 +135,7 @@ const CANDIDATES = [
   { id: "erixon",             name: "Louise Erixon",             party: "SD", role: "Familjepolitisk talesperson",
     quote: { text: "Stoppade prideflaggan på kommunhuset i Sölvesborg.", source: "SVT Nyheter, 2019", url: "https://www.svt.se/nyheter/lokalt/blekinge/erixon-sd-om-pride-nyheten-soppa-pa-en-spik" } },
   { id: "emilsson",           name: "Aron Emilsson",             party: "SD", role: "Partistyrelsen",
-    quote: { text: "Ingen annan lyfter fram den antropologiska dimensionen i kulturen. Det handlar om vår identitet som folk.", source: "Kritiserat av 42 antropologer, Dagens Arena", url: "https://www.dagensarena.se/opinion/42-antropologer/" } },
+    quote: { text: "Vissa tjänster ska vara knutna till medborgarskap och inte vara tillgängliga för alla.", source: "Biblioteksbladet, 2019", url: "https://www.biblioteksbladet.se/nyheter/politik/sd-har-andrat-i-motion-om-bibliotek/" } },
   { id: "broman",             name: "Bo Broman",                 party: "SD", role: "Kulturpolitisk talesperson" },
   { id: "dioukarev",          name: "Dennis Dioukarev",          party: "SD", role: "Partistyrelsen" },
   { id: "lindahl",            name: "Fredrik Lindahl",           party: "SD", role: "Partistyrelsen" },
