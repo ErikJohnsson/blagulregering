@@ -114,7 +114,7 @@ const CANDIDATES = [
 
   // --- SD ---
   { id: "akesson",            name: "Jimmie Åkesson",            party: "SD", role: "Partiledare",
-    quote: { text: "Muslimerna är vårt största utländska hot sedan andra världskriget.", source: "Aftonbladet, debattartikel, oktober 2009", url: "https://sv.wikiquote.org/wiki/Jimmie_%C3%85kesson" } },
+    quote: { text: "Muslimerna är vårt största utländska hot sedan andra världskriget.", source: "Sveriges Radio", url: "https://www.sverigesradio.se/artikel/3178213" } },
   { id: "vinge",              name: "Henrik Vinge",              party: "SD", role: "Vice partiledare" },
   { id: "lindberg",           name: "Linda Lindberg",            party: "SD", role: "Vice partiledare" },
   { id: "backstromjohansson", name: "Mattias Bäckström Johansson", party: "SD", role: "Partisekreterare" },
