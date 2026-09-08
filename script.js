@@ -1113,7 +1113,10 @@
     ctx.fillStyle = "#a9b6cc";
     ctx.fillText("blagulregering.se", PAD, H - PAD + 10);
 
-    return new Promise((resolve) => shareCanvas.toBlob(resolve, "image/png"));
+    return new Promise((resolve) => shareCanvas.toBlob(function (blob) {
+      shareCanvas.width = shareCanvas.height = 0;
+      resolve(blob);
+    }, "image/png"));
   }
 
   async function share() {
@@ -1219,6 +1222,8 @@
 
   function renderPersonBrowser() {
     personGridEl.innerHTML = "";
+    var srHead = el("h2", "sr-only", "Alla kandidater");
+    personGridEl.appendChild(srHead);
     var parties = lInParliament ? ["SD", "M", "KD", "L"] : ["SD", "M", "KD"];
     parties.forEach(function (party) {
       var group = el("div", "person-party-group");
