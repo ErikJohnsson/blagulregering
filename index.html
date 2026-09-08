@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blågul regering – Vem ska sitta i Ulfs nästa regering?</title>
-<meta name="description" content="Bygg din egen M–L–KD–SD-regering, statsråd för statsråd. Enda regeln: minst 12 av 24 statsråd måste bli SD.">
+<meta name="description" content="Bygg Ulf Kristerssons nästa regering själv, statsråd för statsråd. Enda regeln: minst 12 av 24 måste bli SD. En kampanj från Centerstudenter.">
 <link rel="canonical" href="https://blagulregering.se/">
 <meta name="theme-color" content="#0b1f3a">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -15,14 +15,14 @@
 <meta property="og:site_name" content="Blågul regering">
 <meta property="og:url" content="https://blagulregering.se/">
 <meta property="og:title" content="Vem ska sitta i Ulfs nästa regering?">
-<meta property="og:description" content="Bygg din egen M–L–KD–SD-regering, statsråd för statsråd. Enda regeln: minst 12 av 24 statsråd måste bli SD.">
+<meta property="og:description" content="Bygg Ulf Kristerssons nästa regering själv, statsråd för statsråd. Enda regeln: minst 12 av 24 måste bli SD. En kampanj från Centerstudenter.">
 <meta property="og:image" content="https://blagulregering.se/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Blågul regering: 24 statsrådsposter där 12 är markerade SD.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Vem ska sitta i Ulfs nästa regering?">
-<meta name="twitter:description" content="Bygg din egen M–L–KD–SD-regering. Minst 12 av 24 statsråd måste bli SD.">
+<meta name="twitter:description" content="Bygg Ulf Kristerssons nästa regering själv. Minst 12 av 24 statsråd måste bli SD. En kampanj från Centerstudenter.">
 <meta name="twitter:image" content="https://blagulregering.se/og-image.png">
 
 <link rel="preload" href="fonts/archivo-black.woff2" as="font" type="font/woff2" crossorigin>
@@ -35,9 +35,9 @@
     <div class="header-copy">
       <h1>Vem ska sitta i Ulfs nästa regering?</h1>
       <p class="lede">
-        Sätt ihop en M–L–KD–SD-regering själv, statsråd för statsråd, med regeringens
+        Sätt ihop Ulf Kristerssons nästa regering själv, statsråd för statsråd, med regeringens
         24 ministerposter. Enda regeln: <strong>minst 12 av 24 måste bli SD.</strong>
-        Precis som i verkligheten finns det ett tak för hur många poster M, L och KD kan dela på.
+        Precis som i verkligheten finns det ett tak för hur många poster M, KD och L kan dela på.
       </p>
       <div class="lswitch-row">
         <button type="button" class="switch" id="lToggle" role="switch" aria-checked="false" aria-labelledby="lSwitchLabel">
@@ -45,6 +45,7 @@
         </button>
         <label for="lToggle" class="lswitch-label" id="lSwitchLabel">Räkna med att Liberalerna kommer in i riksdagen</label>
       </div>
+      <p class="sender">En kampanj från <a href="https://centerstudenter.se" rel="noopener">Centerstudenter</a></p>
     </div>
     <div class="seatgrid seatgrid-hero" id="heroSeats" role="img" aria-label="24 statsrådsposter. Gula rutor är SD."></div>
   </div>
@@ -57,31 +58,33 @@
       <div class="meter-floor" aria-hidden="true"></div>
     </div>
     <p class="status-line" id="statusLine">
-      <span class="status-item status-sd"><b id="sdCount">0</b> SD av minst 12</span>
-      <span class="status-item"><b id="capLeft">11</b> platser kvar för M/KD</span>
+      <span class="status-item status-sd"><b id="sdCount">0</b> SD <span class="status-fine">(minst 12)</span></span>
+      <span class="status-item"><b id="capLeft">11</b> platser kvar <span id="capParties">M/KD</span></span>
       <span class="status-item status-muted"><span id="filledCount">1 / 24</span> tillsatta</span>
     </p>
-    <div class="status-actions">
-      <button class="btn btn-primary" id="exampleBtn" type="button">Testa ett troligt förslag</button>
-      <button class="btn btn-ghost" id="randomBtn" type="button">Slumpa</button>
+    <p class="status-cap" id="capLine" hidden>Taket är nått – alla lediga poster går till SD.</p>
+    <div class="status-actions" id="statusActions">
+      <button class="btn btn-primary" id="exampleBtn" type="button">Fyll i ett exempel</button>
+      <button class="btn btn-ghost" id="randomBtn" type="button">Slumpa en regering</button>
       <button class="btn btn-ghost hide-mobile" id="shareTopBtn" type="button">Dela</button>
     </div>
   </div>
 </div>
-
-<div class="capbanner" id="capBanner" role="status" hidden></div>
+<p class="sr-only" id="announcer" aria-live="polite"></p>
 
 <section class="result" id="result" hidden>
   <div class="wrap">
     <div class="result-inner">
       <div class="result-copy">
-        <h2 id="resultTitle" aria-live="polite"></h2>
+        <h2 id="resultTitle"></h2>
         <p class="result-sub" id="resultSub"></p>
         <p class="result-note" id="resultNote"></p>
         <div class="result-actions">
-          <button class="btn btn-gold" id="shareBtn" type="button">Dela din regering</button>
+          <button class="btn btn-light" id="shareBtn" type="button">Dela din regering</button>
+          <button class="btn btn-ghost-light" id="resultUndoBtn" type="button" hidden>Ångra</button>
           <button class="btn btn-ghost-light" id="resetBtn" type="button">Börja om</button>
         </div>
+        <p class="result-sender">blagulregering.se · En kampanj från Centerstudenter</p>
       </div>
       <div class="seatgrid seatgrid-result" id="resultSeats" role="list"></div>
     </div>
@@ -96,6 +99,8 @@
 
 <footer class="site-footer">
   <div class="wrap">
+    <p class="footer-sender"><strong>En kampanj från Centerstudenter</strong>, Centerpartiets studentförbund.
+      Ansvarig utgivare och kontakt: <a href="https://centerstudenter.se" rel="noopener">centerstudenter.se</a>.</p>
     <p>
       Ministerposterna är regeringen Kristerssons nuvarande 24 statsrådsposter. Personerna har
       inte tillfrågats om någon post; sajten är ett kommunikationsverktyg som visar hur få platser
@@ -125,9 +130,8 @@
     </div>
 
     <div class="modal-blocked" id="modalBlocked" role="status" hidden>
-      Taket för icke-SD-platser (12 av 24, inklusive statsministern) är nått. Den här
-      posten kan bara tillsättas med en SD-kandidat – eller så frigör du en annan
-      icke-SD-post först.
+      Taket är nått: 12 av 24 poster är redan M, KD eller L. Den här posten kan bara gå till
+      SD – eller så frigör du en annan post först.
     </div>
 
     <div class="modal-controls">
@@ -144,7 +148,7 @@
 </div>
 
 <div class="share-cta" id="shareCta" hidden>
-  <button class="btn btn-gold" id="shareCtaBtn" type="button">Dela din regering</button>
+  <button class="btn btn-primary" id="shareCtaBtn" type="button">Dela din regering</button>
 </div>
 
 <div class="toast" id="toast" role="status" hidden>

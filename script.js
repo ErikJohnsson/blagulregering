@@ -5,6 +5,7 @@
   const SD_FLOOR = 12;
   const TOTAL = PORTFOLIOS.length; // 24
   const SITE_URL = "https://blagulregering.se";
+  const SENDER = "En kampanj från Centerstudenter";
 
   const candidatesById = {};
   CANDIDATES.forEach((c) => (candidatesById[c.id] = c));
@@ -35,6 +36,20 @@
     utrikes: "Utrikes", bistand: "Bistånd",
   };
 
+  // Nyckelord per post som matchas mot kandidaternas roll för gruppen "Föreslagna".
+  const POST_KEYWORDS = {
+    eu: ["eu"], arbetsm: ["arbetsmarknad"], jamstalld: ["jämställdhet"],
+    finans: ["finansminister", "ekonomisk", "finansutskott"], civil: ["civilminister"],
+    finansm: ["finansmarknad"], forsvar: ["försvar"], civforsvar: ["civilt försvar", "försvar"],
+    justitie: ["justitie", "rättspolit", "polis"], migration: ["migration"],
+    energi: ["energi", "näring"], klimat: ["klimat", "miljö"], kultur: ["kultur", "idrott"],
+    landsbygd: ["landsbygd", "jordbruk"], infra: ["infrastruktur", "bostad", "trafik"],
+    social: ["socialminister", "socialpolit"], aldre: ["äldre", "socialförsäkring"],
+    socialtj: ["socialtjänst", "familje"], sjukvard: ["sjukvård"],
+    utbintegr: ["utbildning", "integration"], gymhogsk: ["gymnasie", "högskole", "forskning", "utbildning"],
+    utrikes: ["utrikes"], bistand: ["bistånd", "utrikeshandel"],
+  };
+
   // state: slotId -> candidateId | null
   let state = {};
   PORTFOLIOS.forEach((p) => (state[p.id] = p.fixed || null));
@@ -44,6 +59,7 @@
 
   // En nivå ångra för de åtgärder som skriver över många poster på en gång.
   let undoSnapshot = null;
+  let wasComplete = false;
 
   const STORAGE_KEY = "blagulregering-state-v2";
 
@@ -75,8 +91,20 @@
     }
   }
 
+  function snapshotOf() {
+    return { slots: Object.assign({}, state), lInParliament };
+  }
+  function sameAsSnapshot(snap) {
+    return !!snap && snap.lInParliament === lInParliament &&
+      PORTFOLIOS.every((p) => (snap.slots[p.id] || null) === (state[p.id] || null));
+  }
   function takeSnapshot() {
-    undoSnapshot = { slots: Object.assign({}, state), lInParliament };
+    undoSnapshot = snapshotOf();
+  }
+  // Släng ögonblicksbilden om åtgärden inte ändrade något (t.ex. exempel två gånger).
+  function settleSnapshot() {
+    if (sameAsSnapshot(undoSnapshot)) undoSnapshot = null;
+    return !!undoSnapshot;
   }
 
   function restoreSnapshot() {
@@ -166,6 +194,11 @@
     return parts[parts.length - 1];
   }
 
+  // "soder" ska hitta "Söder": vik ihop diakritiska tecken vid sökning.
+  function fold(s) {
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -178,23 +211,32 @@
     node.style.background = PARTIES[party].color;
   }
 
+  function nonSDPartiesLabel() {
+    return lInParliament ? "M/KD/L" : "M/KD";
+  }
+
   // ---------- rendering ----------
 
   const deptsEl = document.getElementById("departments");
   const heroSeatsEl = document.getElementById("heroSeats");
+  const statusbarEl = document.getElementById("statusbar");
   const meterEl = document.getElementById("meter");
   const meterTrackEl = document.getElementById("meterTrack");
   const sdCountEl = document.getElementById("sdCount");
   const capLeftEl = document.getElementById("capLeft");
+  const capPartiesEl = document.getElementById("capParties");
+  const capLineEl = document.getElementById("capLine");
   const filledCountEl = document.getElementById("filledCount");
-  const capBannerEl = document.getElementById("capBanner");
+  const announcerEl = document.getElementById("announcer");
   const resultEl = document.getElementById("result");
   const resultTitleEl = document.getElementById("resultTitle");
   const resultSubEl = document.getElementById("resultSub");
   const resultSeatsEl = document.getElementById("resultSeats");
   const resultNoteEl = document.getElementById("resultNote");
+  const resultUndoBtn = document.getElementById("resultUndoBtn");
   const shareCtaEl = document.getElementById("shareCta");
   const shareCtaBtn = document.getElementById("shareCtaBtn");
+  const shareTopBtn = document.getElementById("shareTopBtn");
 
   // Sätena visas i en fast ordning: SD-poster först, sedan övriga, sedan tomma.
   // Så blir bilden läsbar direkt: hur mycket gult är det?
@@ -233,12 +275,18 @@
       }
       container.appendChild(seat);
     });
+    if (!withLabels) {
+      container.setAttribute(
+        "aria-label",
+        `${TOTAL} statsrådsposter: ${sd.length} SD, ${other.length} ${nonSDPartiesLabel()}, ${empty.length} tomma.`
+      );
+    }
   }
 
   function renderMeter() {
     const { sd, other } = orderedSlots();
     meterTrackEl.innerHTML = "";
-    // SD fyller från vänster mot strecket vid 12; M/L/KD fyller från höger och
+    // SD fyller från vänster mot strecket vid 12; M/KD/L fyller från höger och
     // kan aldrig passera det. Tomma rutor blir kvar i mitten.
     const cells = new Array(TOTAL).fill(null);
     sd.forEach((p, i) => (cells[i] = "SD"));
@@ -250,11 +298,11 @@
     });
     meterEl.setAttribute(
       "aria-label",
-      `${sd.length} av ${TOTAL} poster är SD. Minst ${SD_FLOOR} krävs. ${other.length} poster är M, L eller KD.`
+      `${sd.length} av ${TOTAL} poster är SD. Minst ${SD_FLOOR} krävs. ${other.length} poster är ${nonSDPartiesLabel()}.`
     );
   }
 
-  function renderDepartments() {
+  function renderDepartments(atCap) {
     const order = [];
     const grouped = {};
     PORTFOLIOS.forEach((p) => {
@@ -270,54 +318,59 @@
       const section = el("section", "dept");
       section.appendChild(el("h2", null, dept));
       const grid = el("div", "dept-grid");
-      grouped[dept].forEach((p) => grid.appendChild(renderPostCard(p)));
+      grouped[dept].forEach((p) => grid.appendChild(renderPostCard(p, atCap)));
       section.appendChild(grid);
       deptsEl.appendChild(section);
     });
   }
 
-  function renderPostCard(p) {
-    const btn = el("button", "post" + (p.fixed ? " fixed" : ""));
-    btn.type = "button";
-    btn.setAttribute("data-slot", p.id);
-    if (p.fixed) btn.setAttribute("aria-disabled", "true");
+  function renderPostCard(p, atCap) {
+    // Den låsta statsministerposten är ingen knapp: den går inte att ändra.
+    const card = el(p.fixed ? "div" : "button", "post" + (p.fixed ? " fixed" : ""));
+    if (!p.fixed) card.type = "button";
+    card.setAttribute("data-slot", p.id);
 
-    btn.appendChild(el("div", "post-title", p.title));
+    card.appendChild(el("span", "post-title", p.title));
 
     const occId = state[p.id];
     if (occId) {
       const c = candidatesById[occId];
-      btn.classList.add(c.party);
-      const row = el("div", "post-person");
+      card.classList.add(c.party);
+      const row = el("span", "post-person");
 
-      const av = el("div", "avatar", initials(c.name));
+      const av = el("span", "avatar", initials(c.name));
       av.setAttribute("aria-hidden", "true");
       paintParty(av, c.party);
       row.appendChild(av);
 
-      const info = el("div");
-      info.appendChild(el("div", "person-name", c.name));
-      const roleLine = el("div", "person-role");
+      const info = el("span");
+      info.appendChild(el("span", "person-name", c.name));
+      const roleLine = el("span", "person-role");
       const tag = el("span", "party-tag", c.party);
       paintParty(tag, c.party);
       roleLine.appendChild(tag);
       roleLine.appendChild(document.createTextNode(" " + (c.role || "")));
       info.appendChild(roleLine);
       row.appendChild(info);
-      btn.appendChild(row);
+      card.appendChild(row);
     } else {
-      const empty = el("div", "post-empty");
-      const av = el("div", "avatar-empty");
+      const empty = el("span", "post-empty");
+      const av = el("span", "avatar-empty");
       av.setAttribute("aria-hidden", "true");
       empty.appendChild(av);
-      empty.appendChild(document.createTextNode("Välj statsråd"));
-      btn.appendChild(empty);
+      if (atCap) {
+        card.classList.add("only-sd");
+        empty.appendChild(document.createTextNode("Bara SD kvar – välj statsråd"));
+      } else {
+        empty.appendChild(document.createTextNode("Välj statsråd"));
+      }
+      card.appendChild(empty);
     }
 
     if (!p.fixed) {
-      btn.addEventListener("click", () => openPicker(p.id, btn));
+      card.addEventListener("click", () => openPicker(p.id, card));
     }
-    return btn;
+    return card;
   }
 
   function heavyPostsHeldBySD() {
@@ -340,8 +393,7 @@
     if (!complete) return;
 
     resultTitleEl.innerHTML = "";
-    const num = el("span", "num", `${sd} av ${TOTAL}`);
-    resultTitleEl.appendChild(num);
+    resultTitleEl.appendChild(el("span", "num", `${sd} av ${TOTAL}`));
     resultTitleEl.appendChild(
       document.createTextNode(sd === 1 ? " statsråd är Sverigedemokrat" : " statsråd är Sverigedemokrater")
     );
@@ -355,43 +407,70 @@
     resultNoteEl.innerHTML = "";
     if (heavy.length) {
       const depts = joinSv(heavy.map((h, i) => (i < heavy.length - 1 ? h.stem + "-" : h.stem + "departementet")));
-      const strong = el("strong", null, depts.replace(/-$/, ""));
       resultNoteEl.appendChild(document.createTextNode("Sverigedemokraterna tar "));
-      resultNoteEl.appendChild(strong);
+      resultNoteEl.appendChild(el("strong", null, depts));
       resultNoteEl.appendChild(document.createTextNode(": " + joinSv(heavy.map((h) => h.name)) + "."));
     } else {
       resultNoteEl.textContent =
         "I den här regeringen håller M och KD de tunga departementen – och SD har tolv andra.";
     }
 
+    resultUndoBtn.hidden = !undoSnapshot;
     shareCtaBtn.textContent = `Dela: ${sd} av ${TOTAL} är SD`;
+  }
+
+  function announce(text) {
+    announcerEl.textContent = "";
+    setTimeout(() => (announcerEl.textContent = text), 30);
   }
 
   function renderStatus() {
     const filled = countFilled();
     const sd = countSD();
     const nonSD = countNonSD([]);
+    const left = Math.max(0, NON_SD_CAP - nonSD);
+    const complete = filled === TOTAL;
+    const atCap = nonSD >= NON_SD_CAP && !complete;
 
     sdCountEl.textContent = String(sd);
-    capLeftEl.textContent = String(Math.max(0, NON_SD_CAP - nonSD));
+    capLeftEl.textContent = String(left);
+    capPartiesEl.textContent = nonSDPartiesLabel();
     filledCountEl.textContent = `${filled} / ${TOTAL}`;
 
     renderMeter();
     renderSeatGrid(heroSeatsEl, false);
 
-    const atCap = nonSD >= NON_SD_CAP;
-    const complete = filled === TOTAL;
-    capBannerEl.hidden = !(atCap && !complete);
-    capBannerEl.textContent =
-      "Taket är nått: 12 av 24 platser (inklusive statsministern) är redan M, L eller KD. " +
-      "Ska Ulf kunna bilda regering måste resten bli SD – nästa lediga post kan bara gå till Sverigedemokraterna.";
+    // Taket: statusraden byter tillstånd i stället för en banner som hamnar utanför skärmen.
+    statusbarEl.classList.toggle("at-cap", atCap);
+    capLineEl.hidden = !atCap;
+
+    shareTopBtn.disabled = filled <= 1;
 
     renderResult(filled, sd);
+
+    if (complete) {
+      announce(`Regeringen är komplett. ${sd} av ${TOTAL} statsråd är SD.`);
+    } else if (atCap) {
+      announce(`Taket är nått. ${nonSD} av ${TOTAL} poster är ${nonSDPartiesLabel()}. Resten kan bara gå till SD.`);
+    } else {
+      announce(`${sd} SD-statsråd av minst ${SD_FLOOR}. ${left} platser kvar för ${nonSDPartiesLabel()}. ${filled} av ${TOTAL} tillsatta.`);
+    }
+
+    // Första gången regeringen blir komplett: visa resultatkortet direkt under statusraden.
+    if (complete && !wasComplete && document.body.dataset.ready) {
+      const top = resultEl.getBoundingClientRect().top + window.scrollY - statusbarEl.offsetHeight - 8;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+    wasComplete = complete;
+    requestAnimationFrame(updateCta);
+    return { filled, sd, complete, atCap };
   }
 
   function renderAll() {
-    renderDepartments();
-    renderStatus();
+    const nonSD = countNonSD([]);
+    const atCap = nonSD >= NON_SD_CAP && countFilled() < TOTAL;
+    renderDepartments(atCap);
+    return renderStatus();
   }
 
   // ---------- picker modal ----------
@@ -406,7 +485,7 @@
   const partyTabsEl = document.getElementById("partyTabs");
   const candidateListEl = document.getElementById("candidateList");
   const clearSlotBtn = document.getElementById("clearSlotBtn");
-  const pageRegions = ["header", "#statusbar", "#capBanner", "#result", "main", ".bottom-actions", "footer", "#shareCta"]
+  const pageRegions = ["header", "#statusbar", "#result", "main", ".bottom-actions", "footer", "#shareCta"]
     .map((s) => document.querySelector(s))
     .filter(Boolean);
 
@@ -416,13 +495,15 @@
 
   function openPicker(slotId, opener) {
     activeSlotId = slotId;
-    activePartyFilter = "ALL";
     openerEl = opener || null;
     searchInput.value = "";
     const p = portfoliosById[slotId];
     modalTitle.textContent = p.title;
     modalSub.textContent = p.dept;
     clearSlotBtn.hidden = !state[slotId];
+    // Vid taket är bara SD möjligt för en tom post: börja på SD-fliken.
+    const atCapForSlot = countNonSD([slotId]) >= NON_SD_CAP;
+    activePartyFilter = atCapForSlot && !state[slotId] ? "SD" : "ALL";
     renderPartyTabs();
     renderCandidateList();
     backdrop.hidden = false;
@@ -454,8 +535,8 @@
     const tabs = [
       { id: "ALL", label: "Alla" },
       { id: "M", label: "M" },
-      { id: "L", label: "L" },
       { id: "KD", label: "KD" },
+      { id: "L", label: "L" },
       { id: "SD", label: "SD" },
     ];
     partyTabsEl.innerHTML = "";
@@ -473,78 +554,105 @@
     });
   }
 
+  function isSuggestedFor(c, slotId) {
+    const p = portfoliosById[slotId];
+    const role = fold(c.role || "");
+    if (role.includes(fold(p.title))) return true;
+    return (POST_KEYWORDS[slotId] || []).some((kw) => role.includes(fold(kw)));
+  }
+
   function renderCandidateList() {
-    const query = searchInput.value.trim().toLowerCase();
+    const query = fold(searchInput.value.trim());
     const nonSDAtCap = activeSlotId && countNonSD([activeSlotId]) >= NON_SD_CAP;
 
     let list = CANDIDATES.filter((c) => {
       if (!isCandidateAvailable(c)) return false;
       if (activePartyFilter !== "ALL" && c.party !== activePartyFilter) return false;
-      if (query && !c.name.toLowerCase().includes(query)) return false;
+      if (query && !fold(c.name).includes(query)) return false;
       return true;
     });
 
-    list = list.slice().sort(
-      (a, b) =>
-        surname(a.name).localeCompare(surname(b.name), "sv") || a.name.localeCompare(b.name, "sv")
-    );
+    const bySurname = (a, b) =>
+      surname(a.name).localeCompare(surname(b.name), "sv") || a.name.localeCompare(b.name, "sv");
+    list = list.slice().sort(bySurname);
 
     candidateListEl.innerHTML = "";
 
     if (list.length === 0) {
       candidateListEl.appendChild(el("li", "candidate-empty-msg", "Inga kandidater matchar."));
+      modalBlocked.hidden = !nonSDAtCap;
+      return;
     }
 
-    list.forEach((c) => {
-      const li = el("li");
-      const row = el("button", "candidate-row");
-      row.type = "button";
-      const isSelected = state[activeSlotId] === c.id;
-      const elsewhereSlot = findSlotOfCandidate(c.id);
-      const isElsewhere = elsewhereSlot && elsewhereSlot !== activeSlotId;
-      if (isSelected) row.classList.add("selected");
-      if (isElsewhere) row.classList.add("elsewhere");
+    // Utan sökning: lyft dem vars roll hör till posten (nuvarande innehavare, talespersoner).
+    let suggested = [];
+    let rest = list;
+    if (!query && activeSlotId) {
+      suggested = list.filter((c) => isSuggestedFor(c, activeSlotId));
+      if (suggested.length) rest = list.filter((c) => !suggested.includes(c));
+    }
 
-      const blocked = c.party !== "SD" && nonSDAtCap && !isSelected;
-      if (blocked) {
-        row.disabled = true;
-        row.setAttribute("aria-describedby", "modalBlocked");
-      }
-
-      const av = el("div", "avatar", initials(c.name));
-      av.setAttribute("aria-hidden", "true");
-      paintParty(av, c.party);
-      row.appendChild(av);
-
-      const main = el("div", "candidate-main");
-      main.appendChild(el("span", "person-name", c.name));
-      let roleText = c.role || "";
-      if (isElsewhere) roleText += ` · sitter just nu på: ${portfoliosById[elsewhereSlot].title}`;
-      main.appendChild(el("div", "person-role", roleText));
-      row.appendChild(main);
-
-      const tag = el("span", "party-tag", c.party);
-      paintParty(tag, c.party);
-      row.appendChild(tag);
-
-      row.addEventListener("click", () => {
-        const targetTitle = portfoliosById[activeSlotId].title;
-        const ok = assign(activeSlotId, c.id);
-        if (!ok) {
-          modalBlocked.hidden = false;
-          return;
-        }
-        undoSnapshot = null;
-        renderAll();
-        closePicker();
-        showToast(`${c.name} (${c.party}) tillsatt som ${targetTitle}.`);
-      });
-
-      li.appendChild(row);
-      candidateListEl.appendChild(li);
-    });
+    const addGroup = (label, items) => {
+      if (label) candidateListEl.appendChild(el("li", "candidate-group", label));
+      items.forEach((c) => candidateListEl.appendChild(renderCandidateRow(c, nonSDAtCap)));
+    };
+    if (suggested.length) {
+      addGroup("Föreslagna för posten", suggested);
+      addGroup("Alla", rest);
+    } else {
+      addGroup(null, rest);
+    }
 
     modalBlocked.hidden = !nonSDAtCap;
+  }
+
+  function renderCandidateRow(c, nonSDAtCap) {
+    const li = el("li");
+    const row = el("button", "candidate-row");
+    row.type = "button";
+    const isSelected = state[activeSlotId] === c.id;
+    const elsewhereSlot = findSlotOfCandidate(c.id);
+    const isElsewhere = elsewhereSlot && elsewhereSlot !== activeSlotId;
+    if (isSelected) row.classList.add("selected");
+    if (isElsewhere) row.classList.add("elsewhere");
+
+    const blocked = c.party !== "SD" && nonSDAtCap && !isSelected;
+    if (blocked) {
+      row.disabled = true;
+      row.setAttribute("aria-describedby", "modalBlocked");
+    }
+
+    const av = el("span", "avatar", initials(c.name));
+    av.setAttribute("aria-hidden", "true");
+    paintParty(av, c.party);
+    row.appendChild(av);
+
+    const main = el("span", "candidate-main");
+    main.appendChild(el("span", "person-name", c.name));
+    let roleText = c.role || "";
+    if (isElsewhere) roleText += ` · sitter just nu på: ${portfoliosById[elsewhereSlot].title}`;
+    main.appendChild(el("span", "person-role", roleText));
+    row.appendChild(main);
+
+    const tag = el("span", "party-tag", c.party);
+    paintParty(tag, c.party);
+    row.appendChild(tag);
+
+    row.addEventListener("click", () => {
+      const targetTitle = portfoliosById[activeSlotId].title;
+      const ok = assign(activeSlotId, c.id);
+      if (!ok) {
+        modalBlocked.hidden = false;
+        return;
+      }
+      undoSnapshot = null;
+      const r = renderAll();
+      closePicker();
+      if (!r.complete) showToast(`${c.name} (${c.party}) tillsatt som ${targetTitle}.`);
+    });
+
+    li.appendChild(row);
+    return li;
   }
 
   function focusablesInModal() {
@@ -607,6 +715,10 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => (toastEl.hidden = true), action ? 7000 : 2800);
   }
+  function hideToast() {
+    clearTimeout(toastTimer);
+    toastEl.hidden = true;
+  }
 
   toastAction.addEventListener("click", () => {
     const fn = toastHandler;
@@ -614,9 +726,22 @@
     toastHandler = null;
     if (fn) fn();
   });
+  resultUndoBtn.addEventListener("click", restoreSnapshot);
 
   function undoAction() {
     return { label: "Ångra", onClick: restoreSnapshot };
+  }
+
+  // Efter en massåtgärd: är regeringen komplett bär resultatkortet ångra-knappen och
+  // rubriken säger allt; annars får toasten göra det.
+  function afterBulkAction(result, message) {
+    const canUndo = settleSnapshot();
+    resultUndoBtn.hidden = !canUndo;
+    if (result.complete) {
+      hideToast();
+    } else {
+      showToast(message, canUndo ? undoAction() : null);
+    }
   }
 
   // ---------- L-toggle ----------
@@ -662,8 +787,7 @@
   document.getElementById("resetBottomBtn").addEventListener("click", resetAll);
 
   document.getElementById("exampleBtn").addEventListener("click", () => {
-    const hadContent = countFilled() > 1;
-    if (hadContent) takeSnapshot();
+    if (countFilled() > 1) takeSnapshot();
     else undoSnapshot = null;
     const overrides = lInParliament ? {} : EXAMPLE_FILL_NO_L_OVERRIDES;
     PORTFOLIOS.forEach((p) => {
@@ -671,8 +795,8 @@
       state[p.id] = overrides[p.id] || EXAMPLE_FILL[p.id] || null;
     });
     saveState();
-    renderAll();
-    showToast(`Ett troligt förslag är ifyllt: ${countSD()} av ${TOTAL} statsråd är SD.`, hadContent ? undoAction() : null);
+    const r = renderAll();
+    afterBulkAction(r, `Ett exempel är ifyllt: ${r.sd} av ${TOTAL} statsråd är SD.`);
   });
 
   function shuffle(arr) {
@@ -685,8 +809,7 @@
   }
 
   document.getElementById("randomBtn").addEventListener("click", () => {
-    const hadContent = countFilled() > 1;
-    if (hadContent) takeSnapshot();
+    if (countFilled() > 1) takeSnapshot();
     else undoSnapshot = null;
     const openSlots = shuffle(PORTFOLIOS.filter((p) => !p.fixed).map((p) => p.id));
 
@@ -713,8 +836,8 @@
     });
 
     saveState();
-    renderAll();
-    showToast(`Regeringen är slumpad: ${countSD()} av ${TOTAL} statsråd är SD.`, hadContent ? undoAction() : null);
+    const r = renderAll();
+    afterBulkAction(r, `Regeringen är slumpad: ${r.sd} av ${TOTAL} statsråd är SD.`);
   });
 
   // ---------- share ----------
@@ -735,45 +858,45 @@
   }
 
   async function share() {
+    if (countFilled() <= 1) return;
     const text = buildShareText();
-    const textWithLink = text + `\n\nBygg din egen: ${SITE_URL}`;
+    const footer = `\n\nBygg din egen: ${SITE_URL}\n${SENDER}.`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: document.title, text, url: SITE_URL });
+        await navigator.share({ title: document.title, text: text + `\n\n${SENDER}.`, url: SITE_URL });
         return;
       } catch (e) {
         if (e && e.name === "AbortError") return;
       }
     }
     try {
-      await navigator.clipboard.writeText(textWithLink);
+      await navigator.clipboard.writeText(text + footer);
       showToast("Din regering är kopierad – klistra in där du vill dela den.");
     } catch (e) {
-      window.prompt("Kopiera manuellt:", textWithLink);
+      window.prompt("Kopiera manuellt:", text + footer);
     }
   }
   ["shareBtn", "shareTopBtn", "shareCtaBtn"].forEach((id) =>
     document.getElementById(id).addEventListener("click", share)
   );
 
-  // Dölj den fasta dela-knappen på mobil när resultatrutan (som har sin egen) syns.
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(
-      (entries) => {
-        const visible = entries.some((en) => en.isIntersecting);
-        shareCtaEl.classList.toggle("is-behind-result", visible);
-        shareCtaEl.style.visibility = visible ? "hidden" : "";
-      },
-      { threshold: 0.2 }
-    ).observe(resultEl);
+  // Dölj den fasta dela-knappen på mobil när resultatkortet (som har sin egen) syns.
+  function updateCta() {
+    if (resultEl.hidden) return;
+    const r = resultEl.getBoundingClientRect();
+    const visible = r.bottom > 80 && r.top < window.innerHeight * 0.8;
+    shareCtaEl.style.visibility = visible ? "hidden" : "";
   }
+  window.addEventListener("scroll", updateCta, { passive: true });
+  window.addEventListener("resize", updateCta);
 
   // ---------- init ----------
 
   loadState();
   renderLToggle();
   renderAll();
+  document.body.dataset.ready = "1";
   if (countFilled() > 1) {
     showToast("Din sparade regering är laddad.", { label: "Börja om", onClick: resetAll });
   }

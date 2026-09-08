@@ -15,14 +15,15 @@ statsråd måste vara SD. Läs `README.md` för hur logiken fungerar.
   11 / 12 / 14 / 16 / 18 / 20 px plus display-storlekarna; inför inga mellanstorlekar.
 - Nya publika filer ska in på tre ställen: `PUBLIC_FILES` i `server.js`, `FILES` i `deploy.sh`
   och fillistan i README.
-- Designgranskning: `.impeccable/critique/` innehåller senaste kritiken (24/36 den 8 sep 2026).
+- Avsändaren är Centerstudenter och ska stå i hero, resultatkort, footer och deltext.
+- Designgranskning: `.impeccable/critique/` innehåller kritikerna (två körningar 8 sep 2026, 24/36).
   Kör `$impeccable critique` igen efter större UI-ändringar.
 - Allt politiskt innehåll (personer, roller, poster) ligger i `data.js`. Ändra aldrig namn eller
   roller där utan att användaren har bekräftat att uppgifterna är korrekta; det är en
   kampanjsajt om verkliga personer.
 
 ## Verifiering
-- `npm test` kör 58 end-to-end-tester mot den riktiga sidan i headless Chrome (`test/run.sh`).
+- `npm test` kör 66 end-to-end-tester mot den riktiga sidan i headless Chrome (`test/run.sh`).
   Kör alltid efter ändringar i `script.js`, `data.js` eller `index.html`. Lägg till ett test i
   `test/logic-test.html` när du lagar en bugg eller lägger till en regel.
 - `node --check script.js && node --check data.js` efter varje JS-ändring.

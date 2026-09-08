@@ -42,6 +42,12 @@ Eller öppna `index.html` direkt i webbläsaren; det fungerar också eftersom in
   icke-SD. *Testa ett troligt förslag* laddar `EXAMPLE_FILL` (med `EXAMPLE_FILL_NO_L_OVERRIDES`
   när L är av). *Börja om* tömmer allt utom PM. Alla tre, liksom L-brytaren när L-statsråd sitter,
   tar en ögonblicksbild först och erbjuder **Ångra** i toasten.
+* **Taket**: när 12 poster (inkl. PM) är M/KD/L byter statusraden till gult med raden
+  "Taket är nått", tomma kort får klassen `only-sd`, och väljaren öppnar på SD-fliken.
+* **Föreslagna**: väljaren lyfter först kandidater vars roll matchar posten (`POST_KEYWORDS`
+  + posttiteln), sedan "Alla" sorterade på efternamn. Sökningen viker ihop diakritiska tecken.
+* **Avsändare**: "En kampanj från Centerstudenter" i hero, resultatkort, footer, deltext och
+  metabeskrivningar.
 * **Resultat**: när alla 24 poster är fyllda visas `#result` under statusraden: rubrik med
   SD-antalet, ett 24-rutors sätesgaller (SD först), vilka tunga departement SD håller
   (`HEAVY_POSTS`) och dela-knappen. På mobil visas dessutom en fast dela-knapp längst ner.
@@ -60,7 +66,7 @@ rubriker/ingress/footer). Kandidat-id:n måste vara unika och alla id:n i `EXAMP
 Snabb kontroll efter ändring:
 
 ```sh
-npm test          # 58 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
+npm test          # 66 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
 ```
 
 Testerna i `test/logic-test.html` laddar den riktiga sidan i en iframe och klickar sig igenom
