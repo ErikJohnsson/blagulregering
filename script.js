@@ -1036,10 +1036,19 @@
     ctx.closePath();
   }
 
+  function loadImg(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = src;
+    });
+  }
+
   async function renderShareImage(format) {
     const W = 1080;
-    const H = format === "story" ? 1902 : 1350;
-    const PAD = 80;
+    const H = format === "story" ? 1920 : 1350;
+    const PAD = 72;
     var isStory = format === "story";
     shareCanvas.width = W;
     shareCanvas.height = H;
@@ -1055,57 +1064,100 @@
     ctx.fillRect(0, 0, W, H);
 
     var sd = countSD();
-    var y = isStory ? 200 : PAD + 10;
+    var y = isStory ? 180 : PAD;
     ctx.textBaseline = "top";
 
-    ctx.font = `400 36px ${SANS}`;
-    ctx.fillStyle = "rgba(255,255,255,.55)";
+    var kickerSize = isStory ? 32 : 28;
+    ctx.font = `400 ${kickerSize}px ${SANS}`;
+    ctx.fillStyle = "rgba(255,255,255,.5)";
     ctx.fillText("Är det här verkligen en regering du vill ha?", PAD, y);
-    y += isStory ? 72 : 60;
+    y += isStory ? 68 : 48;
 
-    ctx.font = `400 120px ${DISPLAY}`;
+    var heroSize = isStory ? 120 : 108;
+    ctx.font = `400 ${heroSize}px ${DISPLAY}`;
     ctx.fillStyle = "#DDBA27";
     ctx.fillText(sd + " av " + TOTAL, PAD, y);
-    y += 130;
+    y += isStory ? 140 : 120;
 
-    ctx.font = `400 44px ${DISPLAY}`;
+    var subSize = isStory ? 46 : 40;
+    ctx.font = `400 ${subSize}px ${DISPLAY}`;
     ctx.fillStyle = "#fff";
     ctx.fillText(sd === 1 ? "statsråd är Sverigedemokrat" : "statsråd är Sverigedemokrater", PAD, y);
-    y += isStory ? 80 : 68;
+    y += isStory ? 80 : 60;
 
     ctx.fillStyle = "#DDBA27";
     ctx.fillRect(PAD, y, 60, 3);
-    y += isStory ? 40 : 32;
+    y += isStory ? 44 : 28;
 
-    var cols = 6, gap = 10, size = Math.floor((W - PAD * 2 - gap * (cols - 1)) / cols);
-    var gridW = cols * size + (cols - 1) * gap;
-    var gx = PAD;
+    var cols = 6, gap = isStory ? 10 : 8;
+    var storyPad = isStory ? 56 : PAD;
+    var size = Math.floor((W - storyPad * 2 - gap * (cols - 1)) / cols);
+    var labelH = isStory ? 32 : 28;
     var { sd: sdSlots, other, empty } = orderedSlots();
     var seats = sdSlots.concat(other, empty);
+    var photoPromises = seats.map(function (p) {
+      var cId = state[p.id];
+      if (!cId) return Promise.resolve(null);
+      return loadImg("photos/" + cId + ".jpg");
+    });
+    var photos = await Promise.all(photoPromises);
+
     seats.forEach(function (p, i) {
-      var cx = gx + (i % cols) * (size + gap);
-      var cy = y + Math.floor(i / cols) * (size + gap);
+      var col = i % cols;
+      var row = Math.floor(i / cols);
+      var cx = storyPad + col * (size + gap);
+      var cy = y + row * (size + labelH + gap);
       var party = partyOfSlot(p.id);
-      roundRect(ctx, cx, cy, size, size, 14);
+
+      roundRect(ctx, cx, cy, size, size, 12);
       if (!party) {
-        ctx.strokeStyle = "rgba(255,255,255,.25)";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,.18)";
+        ctx.lineWidth = 1.5;
         ctx.stroke();
         return;
       }
-      ctx.fillStyle = PARTIES[party].color;
-      ctx.fill();
-      var c = candidatesById[state[p.id]];
-      ctx.fillStyle = PARTIES[party].text;
+
+      ctx.save();
+      ctx.clip();
+      var photo = photos[i];
+      if (photo) {
+        var aspect = photo.width / photo.height;
+        var dw, dh;
+        if (aspect > 1) { dh = size; dw = size * aspect; }
+        else { dw = size; dh = size / aspect; }
+        ctx.drawImage(photo, cx + (size - dw) / 2, cy + (size - dh) / 2, dw, dh);
+        var overlay = ctx.createLinearGradient(cx, cy + size * 0.55, cx, cy + size);
+        overlay.addColorStop(0, "rgba(0,0,0,0)");
+        overlay.addColorStop(1, "rgba(0,0,0,.55)");
+        ctx.fillStyle = overlay;
+        ctx.fillRect(cx, cy, size, size);
+      } else {
+        ctx.fillStyle = PARTIES[party].color;
+        ctx.fillRect(cx, cy, size, size);
+        ctx.fillStyle = PARTIES[party].text;
+        ctx.textAlign = "center";
+        ctx.font = `800 ${isStory ? 38 : 32}px ${SANS}`;
+        ctx.fillText(initials(candidatesById[state[p.id]].name), cx + size / 2, cy + size / 2 - 12);
+        ctx.textAlign = "left";
+      }
+      ctx.restore();
+
+      roundRect(ctx, cx, cy, size, size, 12);
+      ctx.strokeStyle = PARTIES[party].color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
       ctx.textAlign = "center";
-      ctx.font = `800 32px ${SANS}`;
-      ctx.fillText(initials(c.name), cx + size / 2, cy + size / 2 - 10);
+      ctx.font = `600 ${isStory ? 16 : 14}px ${SANS}`;
+      ctx.fillStyle = "rgba(255,255,255,.55)";
+      ctx.fillText(SHORT_TITLES[p.id] || "", cx + size / 2, cy + size + 5);
       ctx.textAlign = "left";
     });
-    y += 4 * (size + gap) - gap + (isStory ? 40 : 30);
+    y += 4 * (size + labelH + gap) - gap + (isStory ? 32 : 20);
 
+    var noteSize = isStory ? 26 : 22;
     var note = heavyNote();
-    ctx.font = `600 24px ${SANS}`;
+    ctx.font = `600 ${noteSize}px ${SANS}`;
     var plain = note.lead + note.strong + note.tail;
     var lines = wrapText(ctx, plain, W - PAD * 2).slice(0, 3);
     lines.forEach(function (l) {
@@ -1113,20 +1165,42 @@
       var idx = note.strong ? l.indexOf(note.strong) : -1;
       if (idx >= 0) {
         var before = l.slice(0, idx), mid = l.slice(idx, idx + note.strong.length), after = l.slice(idx + note.strong.length);
-        ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillText(before, x, y); x += ctx.measureText(before).width;
-        ctx.fillStyle = "#DDBA27"; ctx.font = `700 24px ${SANS}`; ctx.fillText(mid, x, y); x += ctx.measureText(mid).width;
-        ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.font = `600 24px ${SANS}`; ctx.fillText(after, x, y);
+        ctx.fillStyle = "rgba(255,255,255,.65)"; ctx.fillText(before, x, y); x += ctx.measureText(before).width;
+        ctx.fillStyle = "#DDBA27"; ctx.font = `700 ${noteSize}px ${SANS}`; ctx.fillText(mid, x, y); x += ctx.measureText(mid).width;
+        ctx.fillStyle = "rgba(255,255,255,.65)"; ctx.font = `600 ${noteSize}px ${SANS}`; ctx.fillText(after, x, y);
       } else {
-        ctx.fillStyle = "rgba(255,255,255,.7)";
+        ctx.fillStyle = "rgba(255,255,255,.65)";
         ctx.fillText(l, x, y);
       }
-      y += 34;
+      y += isStory ? 36 : 30;
     });
 
+    var q = pickResultQuote();
+    if (q) {
+      y += isStory ? 32 : 16;
+      var quoteSize = isStory ? 26 : 22;
+      var quoteText = "\u201c" + q.c.quote.text + "\u201d";
+      ctx.font = `italic 600 ${quoteSize}px ${SANS}`;
+      var qLines = wrapText(ctx, quoteText, W - PAD * 2 - 24).slice(0, 4);
+      var quoteBarTop = y;
+      qLines.forEach(function (l) {
+        ctx.fillStyle = "rgba(255,255,255,.7)";
+        ctx.fillText(l, PAD + 20, y);
+        y += isStory ? 36 : 30;
+      });
+      ctx.fillStyle = "#DDBA27";
+      ctx.fillRect(PAD, quoteBarTop, 3, y - quoteBarTop);
+      y += 4;
+      ctx.font = `500 ${isStory ? 22 : 18}px ${SANS}`;
+      ctx.fillStyle = "rgba(255,255,255,.45)";
+      ctx.fillText("— " + q.c.name + ", din " + q.post.title.toLowerCase(), PAD + 20, y);
+      y += 28;
+    }
+
     ctx.textAlign = "center";
-    ctx.font = `700 20px ${SANS}`;
+    ctx.font = `600 18px ${SANS}`;
     ctx.fillStyle = "rgba(255,255,255,.35)";
-    ctx.fillText("blagulregering.se", W / 2, H - PAD + 6);
+    ctx.fillText("blagulregering.se · En kampanj från Centerpartiets ungdomsförbund", W / 2, H - (isStory ? 60 : 36));
     ctx.textAlign = "left";
 
     return new Promise(function (resolve) { shareCanvas.toBlob(function (blob) {
