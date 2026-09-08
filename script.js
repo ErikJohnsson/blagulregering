@@ -564,6 +564,7 @@
     const nonSD = countNonSD([]);
     const atCap = nonSD >= NON_SD_CAP && countFilled() < TOTAL;
     renderDepartments(atCap);
+    if (personGridEl) renderPersonBrowser();
     return renderStatus();
   }
 
@@ -579,7 +580,7 @@
   const partyTabsEl = document.getElementById("partyTabs");
   const candidateListEl = document.getElementById("candidateList");
   const clearSlotBtn = document.getElementById("clearSlotBtn");
-  const pageRegions = ["header", "#statusbar", "#result", "main", ".bottom-actions", "footer", "#shareCta"]
+  const pageRegions = ["header", "#statusbar", "#result", "main", ".person-browser", ".bottom-actions", "footer", "#shareCta"]
     .map((s) => document.querySelector(s))
     .filter(Boolean);
 
@@ -930,7 +931,7 @@
     });
     saveState();
     const r = renderAll();
-    afterBulkAction(r, `Ett exempel är ifyllt: ${r.sd} av ${TOTAL} statsråd är SD.`);
+    afterBulkAction(r, `Förslag ifyllt: ${r.sd} av ${TOTAL} statsråd är SD.`);
   });
 
   function shuffle(arr) {
@@ -971,7 +972,7 @@
 
     saveState();
     const r = renderAll();
-    afterBulkAction(r, `Regeringen är slumpad: ${r.sd} av ${TOTAL} statsråd är SD.`);
+    afterBulkAction(r, `Slumpad regering: ${r.sd} av ${TOTAL} statsråd är SD.`);
   });
 
   // ---------- share ----------
@@ -1021,8 +1022,12 @@
     ctx.closePath();
   }
 
-  async function renderShareImage() {
-    const W = 1080, H = 1080, PAD = 72;
+  async function renderShareImage(format) {
+    const W = 1080;
+    const H = format === "story" ? 1902 : 1350;
+    const PAD = 72;
+    shareCanvas.width = W;
+    shareCanvas.height = H;
     const ctx = shareCanvas.getContext("2d");
     try { await document.fonts.load('400 96px "Archivo Black"'); } catch (e) { /* fallback-typsnitt */ }
     const DISPLAY = '"Archivo Black", "Arial Black", Impact, sans-serif';
@@ -1035,8 +1040,17 @@
     ctx.fillRect(0, 0, W, H);
 
     const sd = countSD();
-    let y = PAD;
+    let y = format === "story" ? 180 : PAD;
     ctx.textBaseline = "top";
+
+    ctx.font = `400 56px ${DISPLAY}`;
+    ctx.fillStyle = "#fff";
+    const headline = "Är det här verkligen";
+    ctx.fillText(headline, PAD, y);
+    y += 66;
+    ctx.fillText("en regering du vill ha?", PAD, y);
+    y += 66 + 20;
+
     ctx.font = `400 72px ${DISPLAY}`;
     ctx.fillStyle = "#e8b923";
     const num = `${sd} av ${TOTAL}`;
@@ -1045,9 +1059,8 @@
     ctx.fillText(" statsråd", PAD + ctx.measureText(num).width, y);
     y += 80;
     ctx.fillText(sd === 1 ? "är Sverigedemokrat" : "är Sverigedemokrater", PAD, y);
-    y += 80 + 26;
+    y += 80 + 30;
 
-    // 6 × 4 rutor, centrerade
     const cols = 6, gap = 12, size = 130;
     const gridW = cols * size + (cols - 1) * gap;
     const gx = Math.round((W - gridW) / 2);
@@ -1082,7 +1095,6 @@
     const plain = note.lead + note.strong + note.tail;
     const lines = wrapText(ctx, plain, W - PAD * 2).slice(0, 3);
     lines.forEach((l) => {
-      // Färga departementsnamnen gula om de ligger i den här raden (enkel heuristik: strong-delen).
       let x = PAD;
       const idx = note.strong ? l.indexOf(note.strong) : -1;
       if (idx >= 0) {
@@ -1106,15 +1118,15 @@
 
   async function share() {
     if (countFilled() <= 1) return;
-    const text = buildShareText();
+    const sd = countSD();
     const url = shareUrl();
-    const footer = `\n\nBygg din egen: ${url}\n${SENDER}.`;
+    const shortText = `${sd} av ${TOTAL} statsråd i min Kristersson-regering är SD. Bygg din egen: ${url}\n${SENDER}.`;
 
     if (navigator.share) {
       try {
-        const payload = { title: document.title, text: text + `\n\n${SENDER}.`, url };
+        const payload = { title: document.title, text: shortText, url };
         if (countFilled() === TOTAL && navigator.canShare) {
-          const blob = await renderShareImage();
+          const blob = await renderShareImage("post");
           if (blob) {
             const file = new File([blob], "blagul-regering.png", { type: "image/png" });
             if (navigator.canShare({ files: [file] })) payload.files = [file];
@@ -1127,30 +1139,35 @@
       }
     }
     try {
-      await navigator.clipboard.writeText(text + footer);
-      showToast("Din regering är kopierad – klistra in där du vill dela den.");
+      await navigator.clipboard.writeText(url);
+      showToast("Länken är kopierad.");
     } catch (e) {
-      window.prompt("Kopiera manuellt:", text + footer);
+      window.prompt("Kopiera länken:", url);
     }
   }
   ["shareBtn", "shareTopBtn", "shareCtaBtn"].forEach((id) =>
     document.getElementById(id).addEventListener("click", share)
   );
 
-  document.getElementById("saveImageBtn").addEventListener("click", async () => {
-    const blob = await renderShareImage();
-    if (!blob) return;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "blagul-regering.png";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(a.href);
-      a.remove();
-    }, 1000);
-    showToast("Bilden är sparad.");
-  });
+  function saveImage(format) {
+    return async function () {
+      const blob = await renderShareImage(format);
+      if (!blob) return;
+      const suffix = format === "story" ? "-story" : "-post";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "blagul-regering" + suffix + ".png";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }, 1000);
+      showToast("Bilden är sparad.");
+    };
+  }
+  document.getElementById("saveStoryBtn").addEventListener("click", saveImage("story"));
+  document.getElementById("savePostBtn").addEventListener("click", saveImage("post"));
 
   // Dölj den fasta dela-knappen på mobil när resultatkortet (som har sin egen) syns.
   function updateCta() {
@@ -1161,6 +1178,201 @@
   }
   window.addEventListener("scroll", updateCta, { passive: true });
   window.addEventListener("resize", updateCta);
+
+  // ---------- person browser + post picker ----------
+
+  const personGridEl = document.getElementById("personGrid");
+  const postPickerBackdrop = document.getElementById("postPickerBackdrop");
+  const postPickerModal = postPickerBackdrop.querySelector(".modal");
+  const postPickerTitle = document.getElementById("postPickerTitle");
+  const postPickerSub = document.getElementById("postPickerSub");
+  const postPickerClose = document.getElementById("postPickerClose");
+  const postPickerList = document.getElementById("postPickerList");
+  const postPickerFoot = document.getElementById("postPickerFoot");
+  const removePersonBtn = document.getElementById("removePersonBtn");
+  const personPageRegions = ["header", "#statusbar", "#result", "main", ".person-browser", ".bottom-actions", "footer", "#shareCta", "#modalBackdrop"]
+    .map((s) => document.querySelector(s))
+    .filter(Boolean);
+
+  let activePersonId = null;
+  let postPickerOpener = null;
+
+  function renderPersonBrowser() {
+    personGridEl.innerHTML = "";
+    var parties = lInParliament ? ["SD", "M", "KD", "L"] : ["SD", "M", "KD"];
+    parties.forEach(function (party) {
+      var group = el("div", "person-party-group");
+      group.appendChild(el("h3", "person-party-label", PARTIES[party].name));
+      var grid = el("div", "person-grid");
+      CANDIDATES.filter(function (c) { return c.party === party && isCandidateAvailable(c); })
+        .sort(function (a, b) { return surname(a.name).localeCompare(surname(b.name), "sv") || a.name.localeCompare(b.name, "sv"); })
+        .forEach(function (c) { grid.appendChild(renderPersonCard(c)); });
+      group.appendChild(grid);
+      personGridEl.appendChild(group);
+    });
+  }
+
+  function renderPersonCard(c) {
+    var isFixed = fixedCandidateIds.has(c.id);
+    var card = el(isFixed ? "div" : "button", "person-card" + (isFixed ? " fixed" : ""));
+    if (!isFixed) card.type = "button";
+
+    var row = el("span", "post-person");
+    var av = avatarEl(c);
+    av.setAttribute("aria-hidden", "true");
+    paintParty(av, c.party);
+    row.appendChild(av);
+
+    var info = el("span");
+    info.appendChild(el("span", "person-name", c.name));
+    var roleLine = el("span", "person-role");
+    var tag = el("span", "party-tag", c.party);
+    paintParty(tag, c.party);
+    roleLine.appendChild(tag);
+    roleLine.appendChild(document.createTextNode(" " + (c.role || "")));
+    info.appendChild(roleLine);
+    row.appendChild(info);
+    card.appendChild(row);
+
+    var currentSlot = findSlotOfCandidate(c.id);
+    if (currentSlot) {
+      card.classList.add("seated");
+      card.appendChild(el("span", "person-assignment", portfoliosById[currentSlot].title));
+    }
+
+    if (c.quote) {
+      var q = el("span", "post-quote");
+      q.appendChild(document.createTextNode("“" + c.quote.text + "”"));
+      var src = document.createElement("a");
+      src.className = "post-quote-source";
+      src.href = c.quote.url;
+      src.target = "_blank";
+      src.rel = "noopener";
+      src.textContent = c.quote.source;
+      src.addEventListener("click", function(e) { e.stopPropagation(); });
+      q.appendChild(src);
+      card.appendChild(q);
+    }
+
+    if (!isFixed) {
+      card.addEventListener("click", function () { openPostPicker(c.id, card); });
+    }
+    return card;
+  }
+
+  function openPostPicker(candidateId, opener) {
+    activePersonId = candidateId;
+    postPickerOpener = opener || null;
+    var c = candidatesById[candidateId];
+    postPickerTitle.textContent = c.name;
+    postPickerSub.textContent = c.party + " · " + (c.role || "");
+    var currentSlot = findSlotOfCandidate(candidateId);
+    postPickerFoot.hidden = !currentSlot;
+    renderPostPickerList();
+    postPickerBackdrop.hidden = false;
+    personPageRegions.forEach(function (r) { r.inert = true; });
+    document.body.style.overflow = "hidden";
+    setTimeout(function () { postPickerModal.focus(); }, 0);
+  }
+
+  function closePostPicker() {
+    postPickerBackdrop.hidden = true;
+    activePersonId = null;
+    personPageRegions.forEach(function (r) { r.inert = false; });
+    document.body.style.overflow = "";
+    if (postPickerOpener && document.contains(postPickerOpener)) {
+      postPickerOpener.focus();
+    }
+    postPickerOpener = null;
+  }
+
+  function renderPostPickerList() {
+    postPickerList.innerHTML = "";
+    var c = candidatesById[activePersonId];
+    var currentSlot = findSlotOfCandidate(activePersonId);
+
+    PORTFOLIOS.forEach(function (p) {
+      if (p.fixed) return;
+      var li = el("li");
+      var row = el("button", "post-row");
+      row.type = "button";
+      var isSelected = currentSlot === p.id;
+      if (isSelected) row.classList.add("selected");
+
+      var canDo = canAssign(p.id, activePersonId);
+      if (!canDo && !isSelected) {
+        row.setAttribute("aria-disabled", "true");
+      }
+
+      var info = el("span", "post-row-info");
+      info.appendChild(el("span", "post-row-title", p.title));
+      info.appendChild(el("span", "post-row-dept", p.dept));
+      var occupantId = state[p.id];
+      if (occupantId && occupantId !== activePersonId) {
+        var occ = candidatesById[occupantId];
+        info.appendChild(el("span", "post-row-occupant", occ.name + " (" + occ.party + ") sitter här"));
+      }
+      row.appendChild(info);
+
+      if (isSelected) {
+        var check = el("span", "party-tag", "✓");
+        check.style.background = "var(--navy)";
+        row.appendChild(check);
+      }
+
+      row.addEventListener("click", function () {
+        if (!canDo && !isSelected) return;
+        if (isSelected) {
+          takeSnapshot();
+          clearSlot(p.id);
+          renderAll();
+          renderPersonBrowser();
+          closePostPicker();
+          showToast(c.name + " borttagen från " + p.title + ".", undoAction());
+          return;
+        }
+        takeSnapshot();
+        var ok = assign(p.id, activePersonId);
+        if (!ok) {
+          undoSnapshot = null;
+          return;
+        }
+        var canUndo = settleSnapshot();
+        var r = renderAll();
+        renderPersonBrowser();
+        closePostPicker();
+        if (!r.complete) showToast(c.name + " (" + c.party + ") blir " + p.title + ".", canUndo ? undoAction() : null);
+      });
+
+      li.appendChild(row);
+      postPickerList.appendChild(li);
+    });
+  }
+
+  postPickerClose.addEventListener("click", closePostPicker);
+  postPickerBackdrop.addEventListener("click", function (e) {
+    if (e.target === postPickerBackdrop) closePostPicker();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (postPickerBackdrop.hidden) return;
+    if (e.key === "Escape") {
+      closePostPicker();
+      e.stopPropagation();
+    }
+  });
+  removePersonBtn.addEventListener("click", function () {
+    if (!activePersonId) return;
+    var slot = findSlotOfCandidate(activePersonId);
+    if (!slot) return;
+    var c = candidatesById[activePersonId];
+    var title = portfoliosById[slot].title;
+    takeSnapshot();
+    clearSlot(slot);
+    renderAll();
+    renderPersonBrowser();
+    closePostPicker();
+    showToast(c.name + " borttagen från " + title + ".", undoAction());
+  });
 
   // ---------- init ----------
 

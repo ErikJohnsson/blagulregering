@@ -63,8 +63,8 @@
     </p>
     <p class="status-cap" id="capLine" hidden></p>
     <div class="status-actions" id="statusActions">
-      <button class="btn btn-primary" id="exampleBtn" type="button">Fyll i ett exempel</button>
-      <button class="btn btn-ghost" id="randomBtn" type="button">Slumpa en regering</button>
+      <button class="btn btn-primary" id="exampleBtn" type="button">Visa ett förslag</button>
+      <button class="btn btn-ghost" id="randomBtn" type="button">Slumpa</button>
       <button class="btn btn-ghost hide-mobile" id="shareTopBtn" type="button">Dela</button>
     </div>
   </div>
@@ -80,7 +80,8 @@
         <p class="result-note" id="resultNote"></p>
         <div class="result-actions">
           <button class="btn btn-light" id="shareBtn" type="button">Dela din regering</button>
-          <button class="btn btn-ghost-light" id="saveImageBtn" type="button">Spara som bild</button>
+          <button class="btn btn-ghost-light" id="saveStoryBtn" type="button">Bild för story</button>
+          <button class="btn btn-ghost-light" id="savePostBtn" type="button">Bild för inlägg</button>
           <button class="btn btn-ghost-light" id="resultUndoBtn" type="button" hidden>Ångra</button>
           <button class="btn btn-ghost-light" id="resetBtn" type="button">Börja om</button>
         </div>
@@ -91,7 +92,21 @@
   </div>
 </section>
 
+<div class="wrap person-hint">
+  <a href="#personBrowser" id="personHint">Eller börja med att välja person ↓</a>
+</div>
+
 <main class="wrap" id="departments"></main>
+
+<section class="person-browser" id="personBrowser">
+  <div class="wrap">
+    <div class="person-browser-head">
+      <h2>Eller välj person först</h2>
+      <p class="person-browser-sub">Klicka på en politiker och välj vilken ministerpost den ska ha.</p>
+    </div>
+    <div id="personGrid"></div>
+  </div>
+</section>
 
 <div class="wrap bottom-actions">
   <button class="btn btn-ghost" id="resetBottomBtn" type="button">Börja om</button>
@@ -149,6 +164,24 @@
 
 <div class="share-cta" id="shareCta" hidden>
   <button class="btn btn-primary" id="shareCtaBtn" type="button">Dela din regering</button>
+</div>
+
+<div class="modal-backdrop" id="postPickerBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="postPickerTitle" tabindex="-1">
+    <div class="modal-head">
+      <div>
+        <h2 id="postPickerTitle">Välj ministerpost</h2>
+        <p class="modal-sub" id="postPickerSub"></p>
+      </div>
+      <button class="modal-close" id="postPickerClose" type="button" aria-label="Stäng">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <ul class="candidate-list" id="postPickerList"></ul>
+    <div class="modal-foot" id="postPickerFoot" hidden>
+      <button class="btn btn-ghost" id="removePersonBtn" type="button">Ta bort från posten</button>
+    </div>
+  </div>
 </div>
 
 <canvas id="shareCanvas" width="1080" height="1080" hidden aria-hidden="true"></canvas>

@@ -103,7 +103,7 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  $('#exampleBtn').click();
  ok('example (L off): 24/24, SD 12, no L', filled()==='24 / 24' && counts().SD===12 && counts().L===0, JSON.stringify(counts()));
  ok('complete: result visible, no cap state, CTA visible, toast suppressed', !$('#result').hidden && !$('#statusbar').classList.contains('at-cap') && !$('#shareCta').hidden && d.body.classList.contains('has-cta') && $('#toast').hidden);
- ok('result carries sender line and save-image button', $('.result-sender').textContent.includes('Centerstudenter') && !!$('#saveImageBtn'));
+ ok('result carries sender line and save-image buttons', $('.result-sender').textContent.includes('Centerstudenter') && !!$('#saveStoryBtn') && !!$('#savePostBtn'));
  ok('URL hash carries the government', /#g=[0-9a-z-]{48}/.test(w.location.hash), w.location.hash);
  const sharedHash=w.location.hash; const sharedSlots=JSON.stringify(slots()); w.localStorage.clear(); await reload(true);
  ok('shared link reopens the same government from the hash alone', JSON.stringify(slots())===sharedSlots && !$('#result').hidden && $('#toast').hidden);
@@ -137,7 +137,7 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  // 15 share text
  let captured=null; Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async t=>{captured=t;}}}); w.prompt=(m,t)=>{captured=t;};
  $('#shareBtn').click(); for(let i=0;i<40 && !captured;i++) await new Promise(r=>setTimeout(r,50));
- ok('share text leads with the count, ends with hash link and sender', captured && captured.startsWith('12 av 24 statsråd') && captured.includes('blagulregering.se/#g=') && captured.includes('Centerstudenter') && captured.split('\n').filter(l=>/^[A-ZÅÄÖ].*: /.test(l) && !l.startsWith('Bygg')).length===24, (captured||'').split('\n')[0]);
+ ok('share copies URL with hash', captured && captured.startsWith('https://blagulregering.se/#g=') && captured.length > 40, captured);
  // 16 storage edge cases
  w.localStorage.setItem('blagulregering-state-v2','{not json'); await reload();
  ok('corrupt localStorage tolerated', filled()==='1 / 24');
