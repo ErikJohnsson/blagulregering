@@ -5,7 +5,7 @@
   const SD_FLOOR = 12;
   const TOTAL = PORTFOLIOS.length; // 24
   const SITE_URL = "https://blagulregering.se";
-  const SENDER = "En kampanj från Centerstudenter";
+  const SENDER = "En kampanj från Centerpartiets ungdomsförbund";
 
   const candidatesById = {};
   CANDIDATES.forEach((c) => (candidatesById[c.id] = c));
@@ -54,15 +54,15 @@
   let state = {};
   PORTFOLIOS.forEach((p) => (state[p.id] = p.fixed || null));
 
-  // Om Liberalerna antas ha kommit in i riksdagen 2026. Förvalt: nej.
-  let lInParliament = false;
+  // Om Liberalerna antas ha kommit in i riksdagen 2026. Förvalt: ja.
+  let lInParliament = true;
 
   // En nivå ångra.
   let undoSnapshot = null;
   let wasComplete = false;
   let wasAtCap = false;
 
-  const STORAGE_KEY = "blagulregering-state-v2";
+  const STORAGE_KEY = "blagulregering-state-v3";
 
   // ---------- URL-tillstånd ----------
   // Regeringen kodas i adressens hash så att en delad länk öppnar samma resultat.

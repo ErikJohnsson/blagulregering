@@ -13,7 +13,7 @@ i besökarens webbläsare via `localStorage`.
 | Fil          | Innehåll |
 |--------------|----------|
 | `index.html` | Sidans struktur: header med L-brytare, klistrig statusrad, `<main id="departments">` som fylls av JS, footer, väljar-modal, toast. |
-| `data.js`    | **Allt politiskt innehåll.** Partier + färger, de 24 ministerposterna, kandidatpoolen (92 personer), exempelregeringen och listan över SD-namn som alltid slumpas in. Globala `const`-variabler som `script.js` läser. |
+| `data.js`    | **Allt politiskt innehåll.** Partier + färger, de 24 ministerposterna, kandidatpoolen (93 personer), exempelregeringen och listan över SD-namn som alltid slumpas in. Globala `const`-variabler som `script.js` läser. |
 | `script.js`  | All logik och rendering. En enda IIFE, inga beroenden. |
 | `style.css`  | All styling. Ljust tema, CSS-variabler i `:root`. Rubriker i Archivo Black (självhostad i `fonts/`), övrig text i systemtypsnitt. **Gult betyder alltid SD**; använd aldrig `--gold` som dekor. |
 | `test/`      | End-to-end-tester (`npm test`), se nedan. |
@@ -48,7 +48,7 @@ Eller öppna `index.html` direkt i webbläsaren; det fungerar också eftersom in
   + posttiteln); resten ligger bakom "Visa alla N namn", sorterade på efternamn. Sökningen viker
   ihop diakritiska tecken. Partiflikarna visar antal; SD-fliken läggs först när färre än tre
   M/KD-platser är kvar. Blockerade rader är `aria-disabled` (fokuserbara) i stället för `disabled`.
-* **Avsändare**: "En kampanj från Centerstudenter" i hero, resultatkort, footer, deltext och
+* **Avsändare**: "En kampanj från Centerpartiets ungdomsförbund" i hero, resultatkort, footer, deltext och
   metabeskrivningar.
 * **Resultat**: när alla 24 poster är fyllda visas `#result` under statusraden: rubrik med
   SD-antalet, ett 24-rutors sätesgaller (SD först), vilka tunga departement SD håller

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Kampanjsajt (Centerstudenter) för valet 2026: bygg en M–L–KD–SD-regering där minst 12 av 24
+Kampanjsajt (Centerpartiets ungdomsförbund) för valet 2026: bygg en M–L–KD–SD-regering där minst 12 av 24
 statsråd måste vara SD. Läs `README.md` för hur logiken fungerar.
 
 ## Fakta om projektet
@@ -15,7 +15,7 @@ statsråd måste vara SD. Läs `README.md` för hur logiken fungerar.
   11 / 12 / 14 / 16 / 18 / 20 px plus display-storlekarna; inför inga mellanstorlekar.
 - Nya publika filer ska in på tre ställen: `PUBLIC_FILES` i `server.js`, `FILES` i `deploy.sh`
   och fillistan i README.
-- Avsändaren är Centerstudenter och ska stå i hero, resultatkort, footer och deltext.
+- Avsändaren är Centerpartiets ungdomsförbund och ska stå i hero, resultatkort, footer och deltext.
 - Budskapet: poängen är att SD får posterna, inte att M/KD "tar slut". M, KD, L och SD är ett lag
   (Tidöpartierna). Skriv "resten blir SD:s"/"SD tar …", inte som en förlust för M/KD.
 - Beslutat och inte uppe för omprövning: startläget är en tom byggare (inte förifylld) och

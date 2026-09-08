@@ -163,12 +163,13 @@ const CANDIDATES = [
     quote: { text: "I nio fall av tio är det män från Afrika och Mellanöstern som begår grova våldsbrott utomhus.", source: "Nya Wermlands-Tidningen", url: "https://www.nwt.se/karlstad/sd-toppens-pastaende-saknar-statistikstod" } },
   { id: "stenkvist",          name: "Robert Stenkvist",          party: "SD", role: "Försvarspolitik",
     quote: { text: "Det Borg gjorde var väl vad precis alla sysslar med i Pridefestivalen?", source: "Twitter, 2017", url: "https://www.svt.se/nyheter/inrikes/sd-riksdagsledamoten-om-att-anders-borg-ska-ha-blottat-sig-precis-vad-alla-sysslar-med-i-pridefestivalen" } },
-  { id: "nyberg",             name: "Katja Nyberg",              party: "SD", role: "Polisfrågor" },
+  { id: "weimers",             name: "Charlie Weimers",           party: "SD", role: "Europaparlamentariker" },
   { id: "angelikabengtsson",  name: "Angelika Bengtsson",        party: "SD", role: "Idrottspolitik" },
   { id: "gille",              name: "Sara Gille",                party: "SD", role: "Riksdagsledamot" },
   { id: "christiansson",      name: "Alexander Christiansson",   party: "SD", role: "Riksdagsledamot" },
   { id: "stegrud",            name: "Jessica Stegrud",           party: "SD", role: "Migrations- och rättspolitik",
     quote: { text: "Talande ändå att det är en svenskfödd kurd och en perser som debatterar en svensk kulturkanon i Aktuellt.", source: "X (Twitter)", url: "https://www.svt.se/nyheter/inrikes/jessica-stegruds-svar-en-spaning-om-var-samtid" } },
+  { id: "gellerbrant",        name: "Gustav Gellerbrant",        party: "SD", role: "Chef för SD:s samordningskansli i Regeringskansliet" },
 ];
 
 // Namn som alltid ska ingå vid slumpmässig tillsättning ("Slumpa fram kandidater").
@@ -189,7 +190,7 @@ const GUARANTEED_SD_IDS = [
 // Justitie- och Utrikesdepartementet.
 const EXAMPLE_FILL = {
   eu:        "aspling",
-  arbetsm:   "nyberg",
+  arbetsm:   "gellerbrant",
   jamstalld: "ninalarsson",
   finans:    "sjostedt",
   civil:     "slottner",
