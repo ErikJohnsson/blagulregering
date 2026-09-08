@@ -129,7 +129,7 @@ const CANDIDATES = [
   { id: "kinnunen",           name: "Martin Kinnunen",           party: "SD", role: "Partistyrelsen",
     quote: { text: "Vi behöver så många svenskar som möjligt.", source: "Fria Tider", url: "https://www.friatider.se/kinnunen-vi-behover-sa-manga-svenskar-som-mojligt-0" } },
   { id: "kronlid",            name: "Julia Kronlid",             party: "SD", role: "Riksdagens vice talman",
-    quote: { text: "Jag accepterar inte evolutionsteorins påstående att människor härstammar från aporna.", source: "Sans, 2014", url: "https://fritanke.se/sans/2014-nr-3/kreationism-i-sverigedemokraternas-styrelse/" } },
+    quote: { text: "Jag accepterar inte evolutionsteorins påstående att människor härstammar från aporna.", source: "Fritanke", url: "https://fritanke.se/sans/2014-nr-3/kreationism-i-sverigedemokraternas-styrelse/" } },
   { id: "soder_bjorn",        name: "Björn Söder",               party: "SD", role: "Riksdagens vice talman",
     quote: { text: "Judar och samer tillhör inte den svenska nationen.", source: "Dagens Nyheter, december 2014", url: "https://expo.se/nyhet/sds-riksdagsledamot-judar-ar-inte-svenskar/" } },
   { id: "erixon",             name: "Louise Erixon",             party: "SD", role: "Familjepolitisk talesperson" },
