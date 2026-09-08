@@ -144,7 +144,7 @@ const CANDIDATES = [
   { id: "magnusolsson",       name: "Magnus Olsson",             party: "SD", role: "Partistyrelsen",
     quote: { text: "Föd barn – annars vinner Muhammed.", source: "Dagens ETC, om X-inlägg", url: "https://www.etc.se/inrikes/sd-s-starke-man-i-malmoe-foed-barn-annars-vinner-muhammed" } },
   { id: "hedlund",            name: "Roger Hedlund",             party: "SD", role: "Partistyrelsen",
-    quote: { text: "Nu ska svensk historia och kultur åter vara i fokus med en sverigedemokratisk ledning!", source: "Twitter, om länsmuseet Gävleborg", url: "https://www.svt.se/nyheter/lokalt/gavleborg/roger-hedlund-sd-om-politikens-paverkan-pa-kulturen" } },
+    quote: { text: "Nu ska svensk historia och kultur åter vara i fokus med en sverigedemokratisk ledning!", source: "SVT", url: "https://www.svt.se/nyheter/lokalt/gavleborg/roger-hedlund-sd-om-politikens-paverkan-pa-kulturen" } },
   { id: "mattiaskarlsson",    name: "Mattias Karlsson",          party: "SD", role: "Partistyrelsen",
     quote: { text: "Seger eller döden.", source: "Facebook, 2018", url: "https://www.svt.se/nyheter/inrikes/sd-topps-inlagg-pa-sociala-medier-moter-stark-kritik" } },
   { id: "marttinen",          name: "Adam Marttinen",            party: "SD", role: "Rättspolitik" },
