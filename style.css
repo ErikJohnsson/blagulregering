@@ -385,36 +385,35 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
 }
 .post-quote-source:hover { color: var(--navy); }
 
+#departments .post-quote { display: none; }
+
 .post-empty { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; font-weight: 600; }
 .post-empty .avatar-empty { width: 36px; height: 36px; border-radius: 50%; border: 2px dashed #b7c2d6; flex: none; }
 
-/* ---------- Person hint + browser ---------- */
-.person-hint {
-  text-align: center;
-  padding: 0 20px 6px;
+/* ---------- View tabs + person browser ---------- */
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  padding-top: 12px;
+  padding-bottom: 0;
 }
-.person-hint a {
+.view-tab {
+  flex: 1;
+  padding: 10px 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted);
-  text-decoration: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
 }
-.person-hint a:hover { color: var(--navy); text-decoration: underline; }
-
-
-.person-browser { padding: 0 0 24px; }
-.person-browser-head {
-  padding: 12px 0 16px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 18px;
-}
-.person-browser h2 {
-  font-size: 18px;
-  font-weight: 800;
+.view-tab:hover { color: var(--navy); }
+.view-tab.active {
   color: var(--navy);
-  margin: 0 0 4px;
+  border-bottom-color: var(--navy);
 }
-.person-browser-sub { margin: 0; font-size: 14px; color: var(--muted); }
 
 .person-party-group { margin-bottom: 22px; }
 .person-party-label {
@@ -682,7 +681,7 @@ body.has-cta .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
     padding: 10px 16px;
   }
   .status-line { gap: 0 12px; }
-  .status-cap { white-space: normal; font-size: 13px; line-height: 1.3; }
+  .status-cap { white-space: normal; font-size: 12px; line-height: 1.3; }
   body.has-cta #statusActions { display: none; }
   .modal-controls { order: 2; border-top: 1px solid var(--line); }
   .candidate-list { order: 1; }

@@ -92,20 +92,15 @@
   </div>
 </section>
 
-<div class="wrap person-hint">
-  <a href="#personBrowser" id="personHint">Eller börja med att välja person ↓</a>
+<div class="wrap view-tabs" role="tablist" aria-label="Välj vy">
+  <button class="view-tab active" id="tabPosts" role="tab" aria-selected="true" aria-controls="departments" type="button">Per post</button>
+  <button class="view-tab" id="tabPersons" role="tab" aria-selected="false" aria-controls="personPanel" type="button">Per person</button>
 </div>
 
-<main class="wrap" id="departments"></main>
+<main class="wrap" id="departments" role="tabpanel" aria-labelledby="tabPosts"></main>
 
-<section class="person-browser" id="personBrowser">
-  <div class="wrap">
-    <div class="person-browser-head">
-      <h2>Eller välj person först</h2>
-      <p class="person-browser-sub">Klicka på en politiker och välj vilken ministerpost den ska ha.</p>
-    </div>
-    <div id="personGrid"></div>
-  </div>
+<section class="wrap" id="personPanel" role="tabpanel" aria-labelledby="tabPersons" hidden>
+  <div id="personGrid"></div>
 </section>
 
 <div class="wrap bottom-actions">
@@ -184,7 +179,7 @@
   </div>
 </div>
 
-<canvas id="shareCanvas" width="1080" height="1080" hidden aria-hidden="true"></canvas>
+<canvas id="shareCanvas" hidden aria-hidden="true"></canvas>
 
 <div class="toast" id="toast" role="status" hidden>
   <span id="toastMsg"></span>

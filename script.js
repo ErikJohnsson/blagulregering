@@ -580,7 +580,7 @@
   const partyTabsEl = document.getElementById("partyTabs");
   const candidateListEl = document.getElementById("candidateList");
   const clearSlotBtn = document.getElementById("clearSlotBtn");
-  const pageRegions = ["header", "#statusbar", "#result", "main", ".person-browser", ".bottom-actions", "footer", "#shareCta"]
+  const pageRegions = ["header", "#statusbar", "#result", "main", "#personPanel", ".bottom-actions", "footer", "#shareCta"]
     .map((s) => document.querySelector(s))
     .filter(Boolean);
 
@@ -1179,6 +1179,26 @@
   window.addEventListener("scroll", updateCta, { passive: true });
   window.addEventListener("resize", updateCta);
 
+  // ---------- view tabs ----------
+
+  var tabPosts = document.getElementById("tabPosts");
+  var tabPersons = document.getElementById("tabPersons");
+  var deptPanel = document.getElementById("departments");
+  var personPanel = document.getElementById("personPanel");
+
+  function switchTab(tab) {
+    var isPerson = tab === "persons";
+    tabPosts.classList.toggle("active", !isPerson);
+    tabPersons.classList.toggle("active", isPerson);
+    tabPosts.setAttribute("aria-selected", String(!isPerson));
+    tabPersons.setAttribute("aria-selected", String(isPerson));
+    deptPanel.hidden = isPerson;
+    personPanel.hidden = !isPerson;
+    if (isPerson) renderPersonBrowser();
+  }
+  tabPosts.addEventListener("click", function () { switchTab("posts"); });
+  tabPersons.addEventListener("click", function () { switchTab("persons"); });
+
   // ---------- person browser + post picker ----------
 
   const personGridEl = document.getElementById("personGrid");
@@ -1190,7 +1210,7 @@
   const postPickerList = document.getElementById("postPickerList");
   const postPickerFoot = document.getElementById("postPickerFoot");
   const removePersonBtn = document.getElementById("removePersonBtn");
-  const personPageRegions = ["header", "#statusbar", "#result", "main", ".person-browser", ".bottom-actions", "footer", "#shareCta", "#modalBackdrop"]
+  const personPageRegions = ["header", "#statusbar", "#result", "main", "#personPanel", ".bottom-actions", "footer", "#shareCta", "#modalBackdrop"]
     .map((s) => document.querySelector(s))
     .filter(Boolean);
 
@@ -1290,9 +1310,18 @@
     postPickerList.innerHTML = "";
     var c = candidatesById[activePersonId];
     var currentSlot = findSlotOfCandidate(activePersonId);
+    var lastDept = "";
 
     PORTFOLIOS.forEach(function (p) {
       if (p.fixed) return;
+
+      if (p.dept !== lastDept) {
+        lastDept = p.dept;
+        var header = el("li", "candidate-group", p.dept);
+        header.setAttribute("role", "presentation");
+        postPickerList.appendChild(header);
+      }
+
       var li = el("li");
       var row = el("button", "post-row");
       row.type = "button";
@@ -1306,7 +1335,6 @@
 
       var info = el("span", "post-row-info");
       info.appendChild(el("span", "post-row-title", p.title));
-      info.appendChild(el("span", "post-row-dept", p.dept));
       var occupantId = state[p.id];
       if (occupantId && occupantId !== activePersonId) {
         var occ = candidatesById[occupantId];
