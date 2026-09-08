@@ -977,22 +977,7 @@
 
   // ---------- share ----------
 
-  function buildShareText() {
-    const sd = countSD();
-    const filled = countFilled();
-    const lines = [];
-    lines.push(`${sd} av ${TOTAL} statsråd i min Kristersson-regering är SD.`);
-    if (filled < TOTAL) lines.push(`(${filled} av ${TOTAL} poster tillsatta.)`);
-    lines.push("");
-    PORTFOLIOS.forEach((p) => {
-      const occId = state[p.id];
-      const c = occId ? candidatesById[occId] : null;
-      lines.push(`${p.title}: ${c ? `${c.name} (${c.party})` : "–"}`);
-    });
-    return lines.join("\n");
-  }
-
-  // Resultatkortet som bild (1080×1080) för delning i sociala medier.
+  // Resultatkortet som bild för delning i sociala medier.
   const shareCanvas = document.getElementById("shareCanvas");
 
   function wrapText(ctx, text, maxWidth) {

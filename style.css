@@ -12,7 +12,7 @@
   --navy-3: #1a3a66;
   --ink: #10203a;
   --paper: #f4f6fb;
-  --card: #ffffff;
+  --card: #fff;
   --line: #dde3ee;
   --muted: #5b6779;
   --gold: #e8b923;        /* Betyder alltid SD. Används aldrig som dekor. */
@@ -83,6 +83,7 @@ button { font: inherit; }
   max-width: 56ch;
   color: var(--dim);
   font-size: 18px;
+  letter-spacing: 0.01em;
 }
 .lede strong { color: var(--gold); font-weight: 700; }
 
@@ -220,7 +221,7 @@ button { font: inherit; }
 .statusbar.at-cap .status-line { color: var(--gold-ink); }
 .statusbar.at-cap .status-item b { color: var(--gold-ink); }
 .statusbar.at-cap .status-sd b { background: var(--gold-ink); color: var(--gold); }
-.statusbar.at-cap .status-fine { color: #6b5a1e; }
+.statusbar.at-cap .status-fine { color: var(--gold-ink); }
 /* Engångspuls på de tomma korten när taket just har nåtts, så att förändringen syns
    även när korten ligger nedanför skärmen och användaren scrollar dit. */
 @keyframes only-sd-pulse {
@@ -294,7 +295,7 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
   text-wrap: balance;
 }
 .result h2 .num { color: var(--gold); }
-.result-sub { margin: 6px 0 0; color: var(--dim); font-size: 18px; max-width: 46ch; }
+.result-sub { margin: 6px 0 0; color: var(--dim); font-size: 18px; max-width: 46ch; letter-spacing: 0.01em; }
 .result-note { margin: 10px 0 0; font-size: 16px; max-width: 46ch; }
 .result-note strong { color: var(--gold); }
 .result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
@@ -316,20 +317,23 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
 .seatgrid-result .seat-post { font-size: 11px; font-weight: 600; line-height: 1.15; opacity: .9; max-width: 100%; overflow: hidden; }
 
 /* ---------- Departments ---------- */
-#departments { padding: 34px 20px 24px; }
-.dept { margin-bottom: 30px; }
+#departments { padding: 16px 20px 24px; scroll-margin-top: 100px; }
+.dept { margin-bottom: 24px; }
+.dept:last-child { margin-bottom: 0; }
 .dept h2 {
   font-size: 14px;
   font-weight: 800;
   color: var(--navy);
-  margin: 0 0 12px;
-  padding-bottom: 8px;
+  margin: 0 0 10px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--line);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 .dept-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .post {
@@ -417,6 +421,7 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
   gap: 4px;
   padding-top: 12px;
   padding-bottom: 0;
+  scroll-margin-top: 100px;
 }
 .view-tab {
   flex: 1;
@@ -436,7 +441,9 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
   border-bottom-color: var(--navy);
 }
 
-.person-party-group { margin-bottom: 22px; }
+#personPanel { padding-top: 16px; padding-bottom: 24px; scroll-margin-top: 100px; }
+.person-party-group { margin-bottom: 24px; }
+.person-party-group:last-child { margin-bottom: 0; }
 .person-party-label {
   font-size: 12px;
   font-weight: 800;
@@ -444,6 +451,8 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
   margin: 0 0 10px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--line);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 .person-grid {
   display: grid;
@@ -496,17 +505,15 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
 .post-row:disabled, .post-row[aria-disabled="true"] { cursor: not-allowed; opacity: .45; }
 .post-row-info { flex: 1; min-width: 0; }
 .post-row-title { display: block; font-weight: 700; font-size: 14px; }
-.post-row-dept { display: block; font-size: 12px; color: var(--muted); }
 .post-row-occupant { display: block; font-size: 12px; color: var(--amber-ink); }
 
 .bottom-actions { display: flex; justify-content: center; padding-bottom: 32px; }
 
 /* ---------- Footer ---------- */
 .site-footer { border-top: 1px solid var(--line); padding: 24px 0 48px; }
-.site-footer p { font-size: 12px; color: var(--muted); max-width: 70ch; margin: 0 0 10px; }
+.site-footer p { font-size: 12px; color: var(--muted); max-width: 60ch; margin: 0 0 10px; }
 .footer-sender { color: var(--ink); }
-.footer-sender a { text-underline-offset: 3px; }
-.site-footer details { font-size: 12px; color: var(--muted); max-width: 70ch; }
+.site-footer details { font-size: 12px; color: var(--muted); max-width: 60ch; }
 .site-footer summary { cursor: pointer; font-weight: 700; color: var(--ink); }
 .site-footer details p { margin-top: 8px; }
 
@@ -612,7 +619,7 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
 .candidate-main { flex: 1; min-width: 0; }
 .candidate-main .person-name { display: block; }
 .candidate-empty-msg { padding: 24px 12px; text-align: center; color: var(--muted); font-size: 14px; }
-.candidate-group { font-size: 12px; font-weight: 800; color: var(--muted); padding: 12px 8px 4px; }
+.candidate-group { font-size: 12px; font-weight: 800; color: var(--muted); padding: 12px 8px 4px; letter-spacing: 0.03em; text-transform: uppercase; }
 .candidate-group + li .candidate-row { margin-top: 2px; }
 
 .modal-foot { padding: 12px 18px 18px; border-top: 1px solid var(--line); }
@@ -710,8 +717,8 @@ body.has-cta .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .status-muted { margin-left: 0; }
   .status-actions { justify-content: flex-start; }
   .hide-mobile { display: none; }
-  #departments { padding-bottom: 8px; }
-  body.has-cta #departments { padding-bottom: 72px; }
+  #departments, #personPanel { padding-bottom: 8px; }
+  body.has-cta #departments, body.has-cta #personPanel { padding-bottom: 72px; }
 }
 
 @media (max-width: 340px) {
