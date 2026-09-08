@@ -123,7 +123,7 @@ const CANDIDATES = [
   { id: "sjostedt",           name: "Oscar Sjöstedt",            party: "SD", role: "Ekonomisk-politisk talesperson",
     quote: { text: "I stället för att föra en migrationspolitik där vi attraherar människor med lågt intellekt, så för vi en politik där vi attraherar människor med högt intellekt.", source: "Riksdagens budgetdebatt, september 2020", url: "https://www.svt.se/nyheter/kravet-efter-uttalandet-avga-oscar-sjostedt-sd" } },
   { id: "jomshof",            name: "Richard Jomshof",           party: "SD", role: "Riksdagsledamot",
-    quote: { text: "Islam är en avskyvärd ideologi och religion.", source: "SVT \"Sverige möts\", mars 2021", url: "https://www.svt.se/nyheter/jomshof-sd-i-blasvader-efter-uttalande-om-islam" } },
+    quote: { text: "Islam är en avskyvärd ideologi och religion.", source: "Sveriges Radio, mars 2021", url: "https://www.sverigesradio.se/artikel/sverigedemokraten-richard-jomshof-far-kritik-efter-kommentarer-om-islam" } },
   { id: "tobiasandersson",    name: "Tobias Andersson",          party: "SD", role: "Rättspolitisk talesperson, utskottsordförande",
     quote: { text: "Jag är inte här för att stjäla era ägodelar, ockupera era hem eller attackera era kvinnor. Ni har väl redan tillräckligt med utlänningar som gör det.", source: "Svenska Dagbladet", url: "https://www.svd.se/a/v2e2j/sd-forsvarar-ungdomsledares-tal" } },
   { id: "kinnunen",           name: "Martin Kinnunen",           party: "SD", role: "Partistyrelsen",
