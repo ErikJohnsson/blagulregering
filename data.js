@@ -125,7 +125,7 @@ const CANDIDATES = [
   { id: "jomshof",            name: "Richard Jomshof",           party: "SD", role: "Riksdagsledamot",
     quote: { text: "Islam är en avskyvärd ideologi och religion.", source: "SVT \"Sverige möts\", mars 2021", url: "https://www.svt.se/nyheter/jomshof-sd-i-blasvader-efter-uttalande-om-islam" } },
   { id: "tobiasandersson",    name: "Tobias Andersson",          party: "SD", role: "Rättspolitisk talesperson, utskottsordförande",
-    quote: { text: "Jag är inte här för att stjäla era ägodelar, ockupera era hem eller attackera era kvinnor. Ni har väl redan tillräckligt med utlänningar som gör det.", source: "UKIP-kongress, Manchester, 2016", url: "https://en.wikipedia.org/wiki/Tobias_Andersson_(politician)" } },
+    quote: { text: "Jag är inte här för att stjäla era ägodelar, ockupera era hem eller attackera era kvinnor. Ni har väl redan tillräckligt med utlänningar som gör det.", source: "UKIP-kongress, Manchester, 2016", url: "https://www.svd.se/a/v2e2j/sd-forsvarar-ungdomsledares-tal" } },
   { id: "kinnunen",           name: "Martin Kinnunen",           party: "SD", role: "Partistyrelsen",
     quote: { text: "Vi behöver så många svenskar som möjligt.", source: "Fria Tider", url: "https://www.friatider.se/kinnunen-vi-behover-sa-manga-svenskar-som-mojligt-0" } },
   { id: "kronlid",            name: "Julia Kronlid",             party: "SD", role: "Riksdagens vice talman",
