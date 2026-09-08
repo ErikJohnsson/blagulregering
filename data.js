@@ -5,7 +5,7 @@
 
 const PARTIES = {
   M:  { name: "Moderaterna",        color: "#1F4FCB" },
-  L:  { name: "Liberalerna",        color: "#12A594" },
+  L:  { name: "Liberalerna",        color: "#0e7c70" },
   KD: { name: "Kristdemokraterna",  color: "#6E3FB0" },
   SD: { name: "Sverigedemokraterna",color: "#E8B923" },
 };

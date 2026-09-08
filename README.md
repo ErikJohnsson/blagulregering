@@ -15,7 +15,8 @@ i besökarens webbläsare via `localStorage`.
 | `index.html` | Sidans struktur: header med L-brytare, klistrig statusrad, `<main id="departments">` som fylls av JS, footer, väljar-modal, toast. |
 | `data.js`    | **Allt politiskt innehåll.** Partier + färger, de 24 ministerposterna, kandidatpoolen (92 personer), exempelregeringen och listan över SD-namn som alltid slumpas in. Globala `const`-variabler som `script.js` läser. |
 | `script.js`  | All logik och rendering. En enda IIFE, inga beroenden. |
-| `style.css`  | All styling. Ljust tema, systemtypsnitt, CSS-variabler i `:root`. |
+| `style.css`  | All styling. Ljust tema, CSS-variabler i `:root`. Rubriker i Archivo Black (självhostad i `fonts/`), övrig text i systemtypsnitt. **Gult betyder alltid SD**; använd aldrig `--gold` som dekor. |
+| `test/`      | End-to-end-tester (`npm test`), se nedan. |
 | `server.js`  | Minimal Node-server (allowlist av filer) för hostar som kräver en process. Behövs inte på statiska hostar. |
 
 ## Köra lokalt
@@ -38,8 +39,16 @@ Eller öppna `index.html` direkt i webbläsaren; det fungerar också eftersom in
 * **L-brytaren** (`lInParliament`): av som standard. När den är av döljs L-kandidater,
   L-chipen i statusraden försvinner och alla L-innehavare töms från posterna.
 * **Knappar**: *Slumpa* tar de garanterade SD-namnen + fler SD upp till 12, sedan 11 slumpade
-  icke-SD. *Troligt förslag* laddar `EXAMPLE_FILL` (med `EXAMPLE_FILL_NO_L_OVERRIDES` när L är
-  av). *Sammanfatta* kopierar en textlista till urklipp. *Nollställ* tömmer allt utom PM.
+  icke-SD. *Testa ett troligt förslag* laddar `EXAMPLE_FILL` (med `EXAMPLE_FILL_NO_L_OVERRIDES`
+  när L är av). *Börja om* tömmer allt utom PM. Alla tre, liksom L-brytaren när L-statsråd sitter,
+  tar en ögonblicksbild först och erbjuder **Ångra** i toasten.
+* **Resultat**: när alla 24 poster är fyllda visas `#result` under statusraden: rubrik med
+  SD-antalet, ett 24-rutors sätesgaller (SD först), vilka tunga departement SD håller
+  (`HEAVY_POSTS`) och dela-knappen. På mobil visas dessutom en fast dela-knapp längst ner.
+* **Dela**: systemets delningsmeny på mobil (`navigator.share`), annars urklipp. Texten inleds med
+  SD-antalet och slutar med länken.
+* **Sätesgallren** (hero, statusrad, resultat) ritas av `renderSeatGrid`/`renderMeter` i fast
+  ordning: SD från vänster, M/L/KD från höger, tomma i mitten. Strecket i mätaren står vid 12.
 * **Persistens**: `localStorage`-nyckeln `blagulregering-state-v2`. Höj versionen i nyckeln om
   du ändrar formatet så gamla besökare inte får trasigt state.
 
@@ -51,7 +60,7 @@ rubriker/ingress/footer). Kandidat-id:n måste vara unika och alla id:n i `EXAMP
 Snabb kontroll efter ändring:
 
 ```sh
-npm test          # 44 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
+npm test          # 58 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
 ```
 
 Testerna i `test/logic-test.html` laddar den riktiga sidan i en iframe och klickar sig igenom

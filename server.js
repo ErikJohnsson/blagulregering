@@ -20,6 +20,7 @@ const PUBLIC_FILES = new Set([
   "/og-image.png",
   "/robots.txt",
   "/sitemap.xml",
+  "/fonts/archivo-black.woff2",
 ]);
 
 const MIME = {
@@ -31,6 +32,7 @@ const MIME = {
   ".png": "image/png",
   ".ico": "image/x-icon",
   ".txt": "text/plain; charset=utf-8",
+  ".woff2": "font/woff2",
 };
 
 const server = http.createServer((req, res) => {
@@ -57,11 +59,12 @@ const server = http.createServer((req, res) => {
       return;
     }
     const ext = path.extname(reqPath);
+    const longLived = ext === ".woff2";
     const isHtml = ext === ".html";
     res.writeHead(200, {
       "Content-Type": MIME[ext] || "application/octet-stream",
       // HTML must always be fresh so a new deploy is picked up; assets can be cached briefly.
-      "Cache-Control": isHtml ? "no-cache" : "public, max-age=300",
+      "Cache-Control": isHtml ? "no-cache" : longLived ? "public, max-age=31536000, immutable" : "public, max-age=300",
       "X-Content-Type-Options": "nosniff",
     });
     res.end(data);

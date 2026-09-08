@@ -4,6 +4,7 @@
   const NON_SD_CAP = 12; // inkl. statsministern
   const SD_FLOOR = 12;
   const TOTAL = PORTFOLIOS.length; // 24
+  const SITE_URL = "https://blagulregering.se";
 
   const candidatesById = {};
   CANDIDATES.forEach((c) => (candidatesById[c.id] = c));
@@ -15,12 +16,34 @@
   // slumpas till någon annan post.
   const fixedCandidateIds = new Set(PORTFOLIOS.filter((p) => p.fixed).map((p) => p.fixed));
 
+  // De "tunga" departementen som lyfts fram i resultatet när SD håller dem.
+  const HEAVY_POSTS = [
+    { id: "justitie", stem: "Justitie" },
+    { id: "forsvar", stem: "Försvars" },
+    { id: "utrikes", stem: "Utrikes" },
+    { id: "finans", stem: "Finans" },
+  ];
+
+  // Kortnamn för posterna i resultatrutorna.
+  const SHORT_TITLES = {
+    pm: "Statsmin.", eu: "EU", arbetsm: "Arbetsm.", jamstalld: "Jämställdh.",
+    finans: "Finans", civil: "Civil", finansm: "Finansmarkn.", forsvar: "Försvar",
+    civforsvar: "Civilt förs.", justitie: "Justitie", migration: "Migration",
+    energi: "Energi", klimat: "Klimat", kultur: "Kultur", landsbygd: "Landsbygd",
+    infra: "Infrastr.", social: "Social", aldre: "Äldre", socialtj: "Socialtj.",
+    sjukvard: "Sjukvård", utbintegr: "Utbildning", gymhogsk: "Högskola",
+    utrikes: "Utrikes", bistand: "Bistånd",
+  };
+
   // state: slotId -> candidateId | null
   let state = {};
   PORTFOLIOS.forEach((p) => (state[p.id] = p.fixed || null));
 
-  // Om Liberalerna antas ha kommit in i riksdagen 2026. Av förvalt läge: nej.
+  // Om Liberalerna antas ha kommit in i riksdagen 2026. Förvalt: nej.
   let lInParliament = false;
+
+  // En nivå ångra för de åtgärder som skriver över många poster på en gång.
+  let undoSnapshot = null;
 
   const STORAGE_KEY = "blagulregering-state-v2";
 
@@ -46,13 +69,25 @@
 
   function saveState() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ slots: state, lInParliament })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ slots: state, lInParliament }));
     } catch (e) {
       /* ignore quota errors */
     }
+  }
+
+  function takeSnapshot() {
+    undoSnapshot = { slots: Object.assign({}, state), lInParliament };
+  }
+
+  function restoreSnapshot() {
+    if (!undoSnapshot) return;
+    state = Object.assign({}, undoSnapshot.slots);
+    lInParliament = undoSnapshot.lInParliament;
+    undoSnapshot = null;
+    saveState();
+    renderLToggle();
+    renderAll();
+    showToast("Ångrat.");
   }
 
   function isCandidateAvailable(c) {
@@ -67,23 +102,23 @@
     return null;
   }
 
+  function partyOfSlot(slotId) {
+    const occ = state[slotId];
+    return occ ? candidatesById[occ].party : null;
+  }
+
   function countNonSD(excludeSlotIds) {
     let count = 0;
     PORTFOLIOS.forEach((p) => {
       if (excludeSlotIds.includes(p.id)) return;
-      const occ = state[p.id];
-      if (occ && candidatesById[occ].party !== "SD") count++;
+      const party = partyOfSlot(p.id);
+      if (party && party !== "SD") count++;
     });
     return count;
   }
 
   function countSD() {
-    let count = 0;
-    PORTFOLIOS.forEach((p) => {
-      const occ = state[p.id];
-      if (occ && candidatesById[occ].party === "SD") count++;
-    });
-    return count;
+    return PORTFOLIOS.filter((p) => partyOfSlot(p.id) === "SD").length;
   }
 
   function countFilled() {
@@ -115,15 +150,7 @@
     saveState();
   }
 
-  // ---------- rendering ----------
-
-  const deptsEl = document.getElementById("departments");
-  const filledCountEl = document.getElementById("filledCount");
-  const filledBarEl = document.getElementById("filledBar");
-  const sdCountEl = document.getElementById("sdCount");
-  const sdBarEl = document.getElementById("sdBar");
-  const partyChipsEl = document.getElementById("partyChips");
-  const capBannerEl = document.getElementById("capBanner");
+  // ---------- helpers ----------
 
   function initials(name) {
     return name
@@ -134,8 +161,97 @@
       .join("");
   }
 
-  function avatarStyle(party) {
-    return `background:${PARTIES[party].color}`;
+  function surname(name) {
+    const parts = name.trim().split(" ");
+    return parts[parts.length - 1];
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function paintParty(node, party) {
+    node.classList.add(party);
+    node.style.background = PARTIES[party].color;
+  }
+
+  // ---------- rendering ----------
+
+  const deptsEl = document.getElementById("departments");
+  const heroSeatsEl = document.getElementById("heroSeats");
+  const meterEl = document.getElementById("meter");
+  const meterTrackEl = document.getElementById("meterTrack");
+  const sdCountEl = document.getElementById("sdCount");
+  const capLeftEl = document.getElementById("capLeft");
+  const filledCountEl = document.getElementById("filledCount");
+  const capBannerEl = document.getElementById("capBanner");
+  const resultEl = document.getElementById("result");
+  const resultTitleEl = document.getElementById("resultTitle");
+  const resultSubEl = document.getElementById("resultSub");
+  const resultSeatsEl = document.getElementById("resultSeats");
+  const resultNoteEl = document.getElementById("resultNote");
+  const shareCtaEl = document.getElementById("shareCta");
+  const shareCtaBtn = document.getElementById("shareCtaBtn");
+
+  // Sätena visas i en fast ordning: SD-poster först, sedan övriga, sedan tomma.
+  // Så blir bilden läsbar direkt: hur mycket gult är det?
+  function orderedSlots() {
+    const sd = [], other = [], empty = [];
+    PORTFOLIOS.forEach((p) => {
+      const party = partyOfSlot(p.id);
+      if (!party) empty.push(p);
+      else if (party === "SD") sd.push(p);
+      else other.push(p);
+    });
+    return { sd, other, empty };
+  }
+
+  function renderSeatGrid(container, withLabels) {
+    const { sd, other, empty } = orderedSlots();
+    container.innerHTML = "";
+    sd.concat(other, empty).forEach((p) => {
+      const party = partyOfSlot(p.id);
+      const seat = el("div", "seat");
+      if (withLabels) seat.setAttribute("role", "listitem");
+      if (!party) {
+        seat.classList.add("empty");
+        if (withLabels) seat.setAttribute("aria-label", `${p.title}: tom`);
+      } else {
+        const c = candidatesById[state[p.id]];
+        paintParty(seat, party);
+        if (withLabels) {
+          seat.appendChild(el("span", "seat-init", initials(c.name)));
+          seat.appendChild(el("span", "seat-post", SHORT_TITLES[p.id] || p.title));
+          seat.setAttribute("aria-label", `${p.title}: ${c.name} (${PARTIES[party].name})`);
+        } else {
+          seat.textContent = party === "SD" ? "SD" : party;
+          seat.setAttribute("aria-hidden", "true");
+        }
+      }
+      container.appendChild(seat);
+    });
+  }
+
+  function renderMeter() {
+    const { sd, other } = orderedSlots();
+    meterTrackEl.innerHTML = "";
+    // SD fyller från vänster mot strecket vid 12; M/L/KD fyller från höger och
+    // kan aldrig passera det. Tomma rutor blir kvar i mitten.
+    const cells = new Array(TOTAL).fill(null);
+    sd.forEach((p, i) => (cells[i] = "SD"));
+    other.forEach((p, i) => (cells[TOTAL - 1 - i] = partyOfSlot(p.id)));
+    cells.forEach((party) => {
+      const seg = el("div", "seg");
+      if (party) paintParty(seg, party);
+      meterTrackEl.appendChild(seg);
+    });
+    meterEl.setAttribute(
+      "aria-label",
+      `${sd.length} av ${TOTAL} poster är SD. Minst ${SD_FLOOR} krävs. ${other.length} poster är M, L eller KD.`
+    );
   }
 
   function renderDepartments() {
@@ -151,117 +267,126 @@
 
     deptsEl.innerHTML = "";
     order.forEach((dept) => {
-      const section = document.createElement("section");
-      section.className = "dept";
-      const h2 = document.createElement("h2");
-      h2.textContent = dept;
-      section.appendChild(h2);
-
-      const grid = document.createElement("div");
-      grid.className = "dept-grid";
+      const section = el("section", "dept");
+      section.appendChild(el("h2", null, dept));
+      const grid = el("div", "dept-grid");
       grouped[dept].forEach((p) => grid.appendChild(renderPostCard(p)));
       section.appendChild(grid);
-
       deptsEl.appendChild(section);
     });
   }
 
   function renderPostCard(p) {
-    const btn = document.createElement("button");
+    const btn = el("button", "post" + (p.fixed ? " fixed" : ""));
     btn.type = "button";
-    btn.className = "post" + (p.fixed ? " fixed" : "");
     btn.setAttribute("data-slot", p.id);
+    if (p.fixed) btn.setAttribute("aria-disabled", "true");
 
-    const title = document.createElement("div");
-    title.className = "post-title";
-    title.textContent = p.title;
-    btn.appendChild(title);
+    btn.appendChild(el("div", "post-title", p.title));
 
     const occId = state[p.id];
     if (occId) {
       const c = candidatesById[occId];
-      const row = document.createElement("div");
-      row.className = "post-person";
+      btn.classList.add(c.party);
+      const row = el("div", "post-person");
 
-      const av = document.createElement("div");
-      av.className = "avatar";
-      av.style = avatarStyle(c.party);
-      av.textContent = initials(c.name);
+      const av = el("div", "avatar", initials(c.name));
+      av.setAttribute("aria-hidden", "true");
+      paintParty(av, c.party);
       row.appendChild(av);
 
-      const info = document.createElement("div");
-      const nameLine = document.createElement("div");
-      nameLine.className = "person-name";
-      nameLine.textContent = c.name;
-      info.appendChild(nameLine);
-
-      const roleLine = document.createElement("div");
-      roleLine.className = "person-role";
-      const tag = document.createElement("span");
-      tag.className = "party-tag";
-      tag.style = `background:${PARTIES[c.party].color}`;
-      tag.textContent = c.party;
+      const info = el("div");
+      info.appendChild(el("div", "person-name", c.name));
+      const roleLine = el("div", "person-role");
+      const tag = el("span", "party-tag", c.party);
+      paintParty(tag, c.party);
       roleLine.appendChild(tag);
       roleLine.appendChild(document.createTextNode(" " + (c.role || "")));
       info.appendChild(roleLine);
-
       row.appendChild(info);
       btn.appendChild(row);
     } else {
-      const empty = document.createElement("div");
-      empty.className = "post-empty";
-      const av = document.createElement("div");
-      av.className = "avatar-empty";
+      const empty = el("div", "post-empty");
+      const av = el("div", "avatar-empty");
+      av.setAttribute("aria-hidden", "true");
       empty.appendChild(av);
-      empty.appendChild(document.createTextNode("Tom post — klicka för att välja"));
+      empty.appendChild(document.createTextNode("Välj statsråd"));
       btn.appendChild(empty);
     }
 
     if (!p.fixed) {
-      btn.addEventListener("click", () => openPicker(p.id));
+      btn.addEventListener("click", () => openPicker(p.id, btn));
     }
     return btn;
+  }
+
+  function heavyPostsHeldBySD() {
+    return HEAVY_POSTS.filter((h) => partyOfSlot(h.id) === "SD").map((h) => ({
+      stem: h.stem,
+      name: candidatesById[state[h.id]].name,
+    }));
+  }
+
+  function joinSv(items) {
+    if (items.length <= 1) return items.join("");
+    return items.slice(0, -1).join(", ") + " och " + items[items.length - 1];
+  }
+
+  function renderResult(filled, sd) {
+    const complete = filled === TOTAL;
+    resultEl.hidden = !complete;
+    shareCtaEl.hidden = !complete;
+    document.body.classList.toggle("has-cta", complete);
+    if (!complete) return;
+
+    resultTitleEl.innerHTML = "";
+    const num = el("span", "num", `${sd} av ${TOTAL}`);
+    resultTitleEl.appendChild(num);
+    resultTitleEl.appendChild(
+      document.createTextNode(sd === 1 ? " statsråd är Sverigedemokrat" : " statsråd är Sverigedemokrater")
+    );
+
+    resultSubEl.textContent =
+      "Så här kan Ulf Kristerssons nästa regering se ut när minst tolv poster måste gå till SD.";
+
+    renderSeatGrid(resultSeatsEl, true);
+
+    const heavy = heavyPostsHeldBySD();
+    resultNoteEl.innerHTML = "";
+    if (heavy.length) {
+      const depts = joinSv(heavy.map((h, i) => (i < heavy.length - 1 ? h.stem + "-" : h.stem + "departementet")));
+      const strong = el("strong", null, depts.replace(/-$/, ""));
+      resultNoteEl.appendChild(document.createTextNode("Sverigedemokraterna tar "));
+      resultNoteEl.appendChild(strong);
+      resultNoteEl.appendChild(document.createTextNode(": " + joinSv(heavy.map((h) => h.name)) + "."));
+    } else {
+      resultNoteEl.textContent =
+        "I den här regeringen håller M och KD de tunga departementen – och SD har tolv andra.";
+    }
+
+    shareCtaBtn.textContent = `Dela: ${sd} av ${TOTAL} är SD`;
   }
 
   function renderStatus() {
     const filled = countFilled();
     const sd = countSD();
+    const nonSD = countNonSD([]);
 
+    sdCountEl.textContent = String(sd);
+    capLeftEl.textContent = String(Math.max(0, NON_SD_CAP - nonSD));
     filledCountEl.textContent = `${filled} / ${TOTAL}`;
-    filledBarEl.style.width = `${(filled / TOTAL) * 100}%`;
 
-    sdCountEl.textContent = `${sd} / ${SD_FLOOR}`;
-    const sdPct = Math.min(100, (sd / SD_FLOOR) * 100);
-    sdBarEl.style.width = `${sdPct}%`;
-    sdBarEl.classList.toggle("met", sd >= SD_FLOOR);
+    renderMeter();
+    renderSeatGrid(heroSeatsEl, false);
 
-    const counts = { M: 0, L: 0, KD: 0, SD: 0 };
-    PORTFOLIOS.forEach((p) => {
-      const occ = state[p.id];
-      if (occ) counts[candidatesById[occ].party]++;
-    });
-    partyChipsEl.innerHTML = "";
-    const visibleParties = lInParliament ? ["M", "L", "KD", "SD"] : ["M", "KD", "SD"];
-    visibleParties.forEach((party) => {
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      const dot = document.createElement("span");
-      dot.className = "dot";
-      dot.style.background = PARTIES[party].color;
-      chip.appendChild(dot);
-      chip.appendChild(document.createTextNode(`${party} ${counts[party]}`));
-      partyChipsEl.appendChild(chip);
-    });
-
-    const nonSDNow = countNonSD([]);
-    capBannerEl.hidden = nonSDNow < NON_SD_CAP;
+    const atCap = nonSD >= NON_SD_CAP;
+    const complete = filled === TOTAL;
+    capBannerEl.hidden = !(atCap && !complete);
     capBannerEl.textContent =
-      filled === TOTAL
-        ? `Regeringen är komplett: ${sd} av ${TOTAL} statsråd är SD. Så många måste det bli om ` +
-          `Ulf Kristersson ska kunna fortsätta som statsminister.`
-        : "Taket är nått: 12 av 24 platser (inklusive statsministern) är redan icke-SD. " +
-          "Ska Ulf kunna bilda regering måste minst 12 statsråd vara SD — nästa lediga post " +
-          "kan bara gå till Sverigedemokraterna.";
+      "Taket är nått: 12 av 24 platser (inklusive statsministern) är redan M, L eller KD. " +
+      "Ska Ulf kunna bilda regering måste resten bli SD – nästa lediga post kan bara gå till Sverigedemokraterna.";
+
+    renderResult(filled, sd);
   }
 
   function renderAll() {
@@ -272,6 +397,7 @@
   // ---------- picker modal ----------
 
   const backdrop = document.getElementById("modalBackdrop");
+  const modalEl = backdrop.querySelector(".modal");
   const modalTitle = document.getElementById("modalTitle");
   const modalSub = document.getElementById("modalSub");
   const modalBlocked = document.getElementById("modalBlocked");
@@ -280,13 +406,18 @@
   const partyTabsEl = document.getElementById("partyTabs");
   const candidateListEl = document.getElementById("candidateList");
   const clearSlotBtn = document.getElementById("clearSlotBtn");
+  const pageRegions = ["header", "#statusbar", "#capBanner", "#result", "main", ".bottom-actions", "footer", "#shareCta"]
+    .map((s) => document.querySelector(s))
+    .filter(Boolean);
 
   let activeSlotId = null;
   let activePartyFilter = "ALL";
+  let openerEl = null;
 
-  function openPicker(slotId) {
+  function openPicker(slotId, opener) {
     activeSlotId = slotId;
     activePartyFilter = "ALL";
+    openerEl = opener || null;
     searchInput.value = "";
     const p = portfoliosById[slotId];
     modalTitle.textContent = p.title;
@@ -295,14 +426,28 @@
     renderPartyTabs();
     renderCandidateList();
     backdrop.hidden = false;
+    pageRegions.forEach((r) => (r.inert = true));
     document.body.style.overflow = "hidden";
-    setTimeout(() => searchInput.focus(), 0);
+    // På mobil skymmer tangentbordet halva listan om sökfältet fokuseras direkt;
+    // låt dialogen få fokus och låt användaren välja att söka.
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    setTimeout(() => (coarse ? modalEl : searchInput).focus(), 0);
   }
 
   function closePicker() {
     backdrop.hidden = true;
     activeSlotId = null;
+    pageRegions.forEach((r) => (r.inert = false));
     document.body.style.overflow = "";
+    if (openerEl && document.contains(openerEl)) {
+      openerEl.focus();
+    } else if (openerEl) {
+      // Kortet ritades om; hitta det nya kortet för samma post.
+      const slot = openerEl.getAttribute("data-slot");
+      const again = slot && deptsEl.querySelector(`.post[data-slot="${slot}"]`);
+      if (again) again.focus();
+    }
+    openerEl = null;
   }
 
   function renderPartyTabs() {
@@ -315,10 +460,10 @@
     ];
     partyTabsEl.innerHTML = "";
     tabs.forEach((t) => {
-      const b = document.createElement("button");
+      if (t.id === "L" && !lInParliament) return;
+      const b = el("button", "party-tab", t.label);
       b.type = "button";
-      b.className = "party-tab" + (activePartyFilter === t.id ? " active" : "");
-      b.textContent = t.label;
+      b.setAttribute("aria-pressed", String(activePartyFilter === t.id));
       b.addEventListener("click", () => {
         activePartyFilter = t.id;
         renderPartyTabs();
@@ -330,10 +475,7 @@
 
   function renderCandidateList() {
     const query = searchInput.value.trim().toLowerCase();
-    const nonSDAtCap =
-      activeSlotId &&
-      countNonSD([activeSlotId, findSlotOfCandidate(state[activeSlotId] || "")].filter(Boolean)) >=
-        NON_SD_CAP;
+    const nonSDAtCap = activeSlotId && countNonSD([activeSlotId]) >= NON_SD_CAP;
 
     let list = CANDIDATES.filter((c) => {
       if (!isCandidateAvailable(c)) return false;
@@ -342,25 +484,21 @@
       return true;
     });
 
-    list = list.slice().sort((a, b) => a.name.localeCompare(b.name, "sv"));
+    list = list.slice().sort(
+      (a, b) =>
+        surname(a.name).localeCompare(surname(b.name), "sv") || a.name.localeCompare(b.name, "sv")
+    );
 
     candidateListEl.innerHTML = "";
 
     if (list.length === 0) {
-      const li = document.createElement("li");
-      li.className = "candidate-empty-msg";
-      li.textContent =
-        !lInParliament && (activePartyFilter === "L" || activePartyFilter === "ALL")
-          ? "Liberalerna är avstängda — slå på \"L kom in i riksdagen\" högst upp för att välja L-kandidater."
-          : "Inga kandidater matchar.";
-      candidateListEl.appendChild(li);
+      candidateListEl.appendChild(el("li", "candidate-empty-msg", "Inga kandidater matchar."));
     }
 
     list.forEach((c) => {
-      const li = document.createElement("li");
-      const row = document.createElement("button");
+      const li = el("li");
+      const row = el("button", "candidate-row");
       row.type = "button";
-      row.className = "candidate-row";
       const isSelected = state[activeSlotId] === c.id;
       const elsewhereSlot = findSlotOfCandidate(c.id);
       const isElsewhere = elsewhereSlot && elsewhereSlot !== activeSlotId;
@@ -368,47 +506,35 @@
       if (isElsewhere) row.classList.add("elsewhere");
 
       const blocked = c.party !== "SD" && nonSDAtCap && !isSelected;
-      if (blocked) row.disabled = true;
+      if (blocked) {
+        row.disabled = true;
+        row.setAttribute("aria-describedby", "modalBlocked");
+      }
 
-      const av = document.createElement("div");
-      av.className = "avatar";
-      av.style = avatarStyle(c.party);
-      av.textContent = initials(c.name);
+      const av = el("div", "avatar", initials(c.name));
+      av.setAttribute("aria-hidden", "true");
+      paintParty(av, c.party);
       row.appendChild(av);
 
-      const main = document.createElement("div");
-      main.className = "candidate-main";
-      const nameEl = document.createElement("span");
-      nameEl.className = "person-name";
-      nameEl.textContent = c.name;
-      main.appendChild(nameEl);
-      const roleEl = document.createElement("div");
-      roleEl.className = "person-role";
+      const main = el("div", "candidate-main");
+      main.appendChild(el("span", "person-name", c.name));
       let roleText = c.role || "";
-      if (isElsewhere) {
-        roleText += ` · sitter just nu på: ${portfoliosById[elsewhereSlot].title}`;
-      }
-      roleEl.textContent = roleText;
-      main.appendChild(roleEl);
+      if (isElsewhere) roleText += ` · sitter just nu på: ${portfoliosById[elsewhereSlot].title}`;
+      main.appendChild(el("div", "person-role", roleText));
       row.appendChild(main);
 
-      const tag = document.createElement("span");
-      tag.className = "party-tag";
-      tag.style = `background:${PARTIES[c.party].color}`;
-      tag.textContent = c.party;
+      const tag = el("span", "party-tag", c.party);
+      paintParty(tag, c.party);
       row.appendChild(tag);
 
       row.addEventListener("click", () => {
-        if (blocked) {
-          modalBlocked.hidden = false;
-          return;
-        }
         const targetTitle = portfoliosById[activeSlotId].title;
         const ok = assign(activeSlotId, c.id);
         if (!ok) {
           modalBlocked.hidden = false;
           return;
         }
+        undoSnapshot = null;
         renderAll();
         closePicker();
         showToast(`${c.name} (${c.party}) tillsatt som ${targetTitle}.`);
@@ -421,13 +547,36 @@
     modalBlocked.hidden = !nonSDAtCap;
   }
 
+  function focusablesInModal() {
+    return Array.from(
+      modalEl.querySelectorAll('button:not([disabled]):not([hidden]), input:not([disabled])')
+    ).filter((n) => n.offsetParent !== null);
+  }
+
   searchInput.addEventListener("input", renderCandidateList);
   modalClose.addEventListener("click", closePicker);
   backdrop.addEventListener("click", (e) => {
     if (e.target === backdrop) closePicker();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !backdrop.hidden) closePicker();
+    if (backdrop.hidden) return;
+    if (e.key === "Escape") {
+      closePicker();
+      return;
+    }
+    if (e.key === "Tab") {
+      const items = focusablesInModal();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === modalEl)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   });
   clearSlotBtn.addEventListener("click", () => {
     if (!activeSlotId) return;
@@ -439,53 +588,83 @@
   // ---------- toast ----------
 
   const toastEl = document.getElementById("toast");
+  const toastMsg = document.getElementById("toastMsg");
+  const toastAction = document.getElementById("toastAction");
   let toastTimer = null;
-  function showToast(msg) {
-    toastEl.textContent = msg;
+  let toastHandler = null;
+
+  function showToast(msg, action) {
+    toastMsg.textContent = msg;
+    if (action) {
+      toastAction.textContent = action.label;
+      toastAction.hidden = false;
+      toastHandler = action.onClick;
+    } else {
+      toastAction.hidden = true;
+      toastHandler = null;
+    }
     toastEl.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (toastEl.hidden = true), 2600);
+    toastTimer = setTimeout(() => (toastEl.hidden = true), action ? 7000 : 2800);
+  }
+
+  toastAction.addEventListener("click", () => {
+    const fn = toastHandler;
+    toastEl.hidden = true;
+    toastHandler = null;
+    if (fn) fn();
+  });
+
+  function undoAction() {
+    return { label: "Ångra", onClick: restoreSnapshot };
   }
 
   // ---------- L-toggle ----------
 
   const lToggle = document.getElementById("lToggle");
-  const lSwitchLabel = document.getElementById("lSwitchLabel");
 
   function renderLToggle() {
     lToggle.setAttribute("aria-checked", String(lInParliament));
-    lSwitchLabel.innerHTML = lInParliament
-      ? 'Liberalerna tog sig <strong>in</strong> i riksdagen 2026'
-      : 'Liberalerna tog sig <strong>inte</strong> in i riksdagen 2026';
   }
 
   lToggle.addEventListener("click", () => {
+    const turningOff = lInParliament;
+    const lSeated = PORTFOLIOS.filter((p) => !p.fixed && partyOfSlot(p.id) === "L").length;
+    if (turningOff && lSeated) takeSnapshot();
     lInParliament = !lInParliament;
     if (!lInParliament) {
-      // Liberalerna åker ur riksdagen: töm alla poster som just nu innehas av L.
       PORTFOLIOS.forEach((p) => {
-        if (p.fixed) return;
-        const occ = state[p.id];
-        if (occ && candidatesById[occ].party === "L") state[p.id] = null;
+        if (!p.fixed && partyOfSlot(p.id) === "L") state[p.id] = null;
       });
     }
     saveState();
     renderLToggle();
     renderAll();
+    if (turningOff && lSeated) {
+      showToast(`Liberalerna räknas inte längre med – ${lSeated} ${lSeated === 1 ? "post" : "poster"} tömdes.`, undoAction());
+    }
   });
 
   // ---------- top actions ----------
 
-  document.getElementById("resetBtn").addEventListener("click", () => {
-    if (!confirm("Nollställ hela regeringen (utom statsministern)?")) return;
+  function resetAll() {
+    if (countFilled() <= 1) return;
+    takeSnapshot();
     PORTFOLIOS.forEach((p) => {
       if (!p.fixed) state[p.id] = null;
     });
     saveState();
     renderAll();
-  });
+    showToast("Regeringen är tömd.", undoAction());
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  document.getElementById("resetBtn").addEventListener("click", resetAll);
+  document.getElementById("resetBottomBtn").addEventListener("click", resetAll);
 
   document.getElementById("exampleBtn").addEventListener("click", () => {
+    const hadContent = countFilled() > 1;
+    if (hadContent) takeSnapshot();
+    else undoSnapshot = null;
     const overrides = lInParliament ? {} : EXAMPLE_FILL_NO_L_OVERRIDES;
     PORTFOLIOS.forEach((p) => {
       if (p.fixed) return;
@@ -493,7 +672,7 @@
     });
     saveState();
     renderAll();
-    showToast("Ett troligt förslag är ifyllt — 12 av 24 statsråd är nu SD.");
+    showToast(`Ett troligt förslag är ifyllt: ${countSD()} av ${TOTAL} statsråd är SD.`, hadContent ? undoAction() : null);
   });
 
   function shuffle(arr) {
@@ -506,6 +685,9 @@
   }
 
   document.getElementById("randomBtn").addEventListener("click", () => {
+    const hadContent = countFilled() > 1;
+    if (hadContent) takeSnapshot();
+    else undoSnapshot = null;
     const openSlots = shuffle(PORTFOLIOS.filter((p) => !p.fixed).map((p) => p.id));
 
     const guaranteedSD = GUARANTEED_SD_IDS.filter((id) => candidatesById[id]);
@@ -532,44 +714,67 @@
 
     saveState();
     renderAll();
-    showToast(`Regeringen är slumpad — ${countSD()} av ${TOTAL} statsråd är SD.`);
+    showToast(`Regeringen är slumpad: ${countSD()} av ${TOTAL} statsråd är SD.`, hadContent ? undoAction() : null);
   });
 
-  document.getElementById("shareBtn").addEventListener("click", async () => {
+  // ---------- share ----------
+
+  function buildShareText() {
+    const sd = countSD();
+    const filled = countFilled();
     const lines = [];
-    lines.push("Min regering:");
+    lines.push(`${sd} av ${TOTAL} statsråd i min Kristersson-regering är SD.`);
+    if (filled < TOTAL) lines.push(`(${filled} av ${TOTAL} poster tillsatta.)`);
+    lines.push("");
     PORTFOLIOS.forEach((p) => {
       const occId = state[p.id];
       const c = occId ? candidatesById[occId] : null;
-      lines.push(`- ${p.title}: ${c ? `${c.name} (${c.party})` : "—"}`);
+      lines.push(`${p.title}: ${c ? `${c.name} (${c.party})` : "–"}`);
     });
-    const sd = countSD();
-    const filled = countFilled();
-    lines.push("");
-    lines.push(`SD-statsråd: ${sd} av ${TOTAL} (${filled} poster tillsatta totalt)`);
-    const text = lines.join("\n");
-    const textWithLink = text + "\n\nBygg din egen: https://blagulregering.se";
+    return lines.join("\n");
+  }
 
-    // På mobil: öppna systemets delningsmeny (Messenger, X, Signal …). Annars: urklipp.
+  async function share() {
+    const text = buildShareText();
+    const textWithLink = text + `\n\nBygg din egen: ${SITE_URL}`;
+
     if (navigator.share) {
       try {
-        await navigator.share({ title: document.title, text, url: location.href });
+        await navigator.share({ title: document.title, text, url: SITE_URL });
         return;
       } catch (e) {
-        if (e && e.name === "AbortError") return; // användaren avbröt
+        if (e && e.name === "AbortError") return;
       }
     }
     try {
       await navigator.clipboard.writeText(textWithLink);
-      showToast("Sammanfattningen är kopierad till urklipp.");
+      showToast("Din regering är kopierad – klistra in där du vill dela den.");
     } catch (e) {
       window.prompt("Kopiera manuellt:", textWithLink);
     }
-  });
+  }
+  ["shareBtn", "shareTopBtn", "shareCtaBtn"].forEach((id) =>
+    document.getElementById(id).addEventListener("click", share)
+  );
+
+  // Dölj den fasta dela-knappen på mobil när resultatrutan (som har sin egen) syns.
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((en) => en.isIntersecting);
+        shareCtaEl.classList.toggle("is-behind-result", visible);
+        shareCtaEl.style.visibility = visible ? "hidden" : "";
+      },
+      { threshold: 0.2 }
+    ).observe(resultEl);
+  }
 
   // ---------- init ----------
 
   loadState();
   renderLToggle();
   renderAll();
+  if (countFilled() > 1) {
+    showToast("Din sparade regering är laddad.", { label: "Börja om", onClick: resetAll });
+  }
 })();

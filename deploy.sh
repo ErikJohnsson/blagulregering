@@ -14,7 +14,7 @@ cd "$(dirname "$0")"
 HOST="${LOOPIA_HOST:-ftpcluster.loopia.se}"
 DIR="${LOOPIA_DIR:-public_html}"
 
-FILES=(index.html style.css script.js data.js favicon.svg apple-touch-icon.png og-image.png robots.txt sitemap.xml .htaccess)
+FILES=(index.html style.css script.js data.js favicon.svg apple-touch-icon.png og-image.png robots.txt sitemap.xml .htaccess fonts/archivo-black.woff2)
 for f in "${FILES[@]}"; do [[ -f "$f" ]] || { echo "Saknar $f" >&2; exit 1; }; done
 
 node --check script.js && node --check data.js
@@ -23,7 +23,9 @@ lftp -u "$LOOPIA_USER","$LOOPIA_PASS" "ftp://$HOST" <<LFTP
 set ftp:ssl-force true
 set ssl:verify-certificate yes
 cd $DIR
-mput ${FILES[*]}
+mkdir -p fonts
+mput -O fonts fonts/archivo-black.woff2
+mput index.html style.css script.js data.js favicon.svg apple-touch-icon.png og-image.png robots.txt sitemap.xml .htaccess
 bye
 LFTP
 echo "Klart: https://blagulregering.se"
