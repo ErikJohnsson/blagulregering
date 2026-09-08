@@ -153,8 +153,6 @@ const CANDIDATES = [
   { id: "quensel",            name: "Charlotte Quensel",         party: "SD", role: "Riksdagsledamot" },
   { id: "eskilandersson",     name: "Mikael Eskilandersson",     party: "SD", role: "Konstitutionella frågor" },
   { id: "fromutterstedt",     name: "Ann-Christine From Utterstedt", party: "SD", role: "Äldrefrågor" },
-  { id: "stahlherrstedt",     name: "Carina Ståhl Herrstedt",    party: "SD", role: "Socialförsäkringsfrågor",
-    quote: { text: "Använde n-ordet om fotbollsspelare.", source: "Aftonbladet, 2016", url: "https://www.gp.se/politik/hon-blir-sverigedemokraternas-forsta-landshovding-.481f4f6a-91b7-49b4-8578-4f146f8dafa7" } },
   { id: "palmqvist",          name: "Eric Palmqvist",            party: "SD", role: "Miljö- och jordbrukspolitik",
     quote: { text: "Gillade partikamrats inlägg om att köra över miljödemonstranter.", source: "Norrbottens-kuriren, 2023", url: "https://www.nsd.se/nyheter/gallivare/artikel/sds-riksdagsman-eric-palmqvist-gillade-hatinlagg-/l7vndd1l" } },
   { id: "strandman",          name: "Mikael Strandman",          party: "SD", role: "Försvarspolitik",
