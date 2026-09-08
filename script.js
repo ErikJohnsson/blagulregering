@@ -19,10 +19,10 @@
 
   // De "tunga" departementen som lyfts fram i resultatet när SD håller dem.
   const HEAVY_POSTS = [
-    { id: "justitie", stem: "Justitie" },
-    { id: "forsvar", stem: "Försvars" },
-    { id: "utrikes", stem: "Utrikes" },
-    { id: "finans", stem: "Finans" },
+    { id: "justitie", dept: "Justitiedepartementet" },
+    { id: "forsvar", dept: "Försvarsdepartementet" },
+    { id: "utrikes", dept: "Utrikesdepartementet" },
+    { id: "finans", dept: "Finansdepartementet" },
   ];
 
   // Kortnamn för posterna i resultatrutorna.
@@ -459,7 +459,7 @@
 
   function heavyPostsHeldBySD() {
     return HEAVY_POSTS.filter((h) => partyOfSlot(h.id) === "SD").map((h) => ({
-      stem: h.stem,
+      dept: h.dept,
       name: candidatesById[state[h.id]].name,
     }));
   }
@@ -472,7 +472,7 @@
   function heavyNote() {
     const heavy = heavyPostsHeldBySD();
     if (!heavy.length) return { lead: "", strong: "", tail: "I den här regeringen håller M och KD de tunga departementen – och SD har tolv andra." };
-    const depts = joinSv(heavy.map((h, i) => (i < heavy.length - 1 ? h.stem + "-" : h.stem + "departementet")));
+    const depts = joinSv(heavy.map((h) => h.dept));
     return { lead: "Sverigedemokraterna tar ", strong: depts, tail: ": " + joinSv(heavy.map((h) => h.name)) + "." };
   }
 
@@ -1111,7 +1111,7 @@
 
     ctx.font = `600 22px ${SANS}`;
     ctx.fillStyle = "#a9b6cc";
-    ctx.fillText(`blagulregering.se · ${SENDER}`, PAD, H - PAD + 10);
+    ctx.fillText("blagulregering.se", PAD, H - PAD + 10);
 
     return new Promise((resolve) => shareCanvas.toBlob(resolve, "image/png"));
   }
