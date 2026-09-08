@@ -15,7 +15,7 @@
   --card: #fff;
   --line: #dde3ee;
   --muted: #5b6779;
-  --gold: #e8b923;        /* Betyder alltid SD. Används aldrig som dekor. */
+  --gold: #DDBA27;        /* Betyder alltid SD. Används aldrig som dekor. */
   --gold-ink: #4a3a05;
   --danger: #9c2727;
   --danger-bg: #fdecec;
@@ -217,7 +217,7 @@ button { font: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.statusbar.at-cap { background: var(--gold); border-bottom-color: #d4a51a; }
+.statusbar.at-cap { background: var(--gold); border-bottom-color: #bc9e21; }
 .statusbar.at-cap .status-line { color: var(--gold-ink); }
 .statusbar.at-cap .status-item b { color: var(--gold-ink); }
 .statusbar.at-cap .status-sd b { background: var(--gold-ink); color: var(--gold); }
@@ -225,9 +225,9 @@ button { font: inherit; }
 /* Engångspuls på de tomma korten när taket just har nåtts, så att förändringen syns
    även när korten ligger nedanför skärmen och användaren scrollar dit. */
 @keyframes only-sd-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(232,185,35,0); }
-  35% { box-shadow: 0 0 0 6px rgba(232,185,35,.55); }
-  100% { box-shadow: 0 0 0 0 rgba(232,185,35,0); }
+  0% { box-shadow: 0 0 0 0 rgba(221,186,39,0); }
+  35% { box-shadow: 0 0 0 6px rgba(221,186,39,.55); }
+  100% { box-shadow: 0 0 0 0 rgba(221,186,39,0); }
 }
 body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier(.2,.8,.2,1) 1; }
 .statusbar.at-cap .seg { background: rgba(74,58,5,.18); }
@@ -354,7 +354,7 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
 .post:active { transform: translateY(1px); }
 .post.fixed { cursor: default; }
 .post.fixed:hover { box-shadow: none; border-color: var(--line); }
-.post.SD { border-color: #e6c75c; background: #fffbea; }
+.post.SD { border-color: #e9d273; background: #fdfaf0; }
 .post.only-sd { border-color: var(--gold); border-style: dashed; }
 .post.only-sd .post-empty { color: var(--gold-ink); }
 .post.only-sd .avatar-empty { border-color: var(--gold); }

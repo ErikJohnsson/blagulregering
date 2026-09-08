@@ -4,10 +4,10 @@
 // statsråd) — inte en fullständig lista över samtliga riksdagsledamöter.
 
 const PARTIES = {
-  M:  { name: "Moderaterna",        color: "#1F4FCB" },
-  L:  { name: "Liberalerna",        color: "#0e7c70" },
-  KD: { name: "Kristdemokraterna",  color: "#8a2f8f" },
-  SD: { name: "Sverigedemokraterna",color: "#E8B923" },
+  M:  { name: "Moderaterna",        color: "#52BDEC", text: "#0a2a40" },
+  L:  { name: "Liberalerna",        color: "#006AB3", text: "#fff" },
+  KD: { name: "Kristdemokraterna",  color: "#231977", text: "#fff" },
+  SD: { name: "Sverigedemokraterna",color: "#DDBA27", text: "#4a3a05" },
 };
 
 const PORTFOLIOS = [

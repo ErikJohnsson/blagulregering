@@ -280,6 +280,7 @@
   function paintParty(node, party) {
     node.classList.add(party);
     node.style.background = PARTIES[party].color;
+    node.style.color = PARTIES[party].text;
   }
 
   function nonSDPartiesLabel() {
@@ -1037,7 +1038,7 @@
     y += 66 + 20;
 
     ctx.font = `400 72px ${DISPLAY}`;
-    ctx.fillStyle = "#e8b923";
+    ctx.fillStyle = "#DDBA27";
     const num = `${sd} av ${TOTAL}`;
     ctx.fillText(num, PAD, y);
     ctx.fillStyle = "#fff";
@@ -1065,7 +1066,7 @@
       ctx.fillStyle = PARTIES[party].color;
       ctx.fill();
       const c = candidatesById[state[p.id]];
-      ctx.fillStyle = party === "SD" ? "#4a3a05" : "#fff";
+      ctx.fillStyle = PARTIES[party].text;
       ctx.textAlign = "center";
       ctx.font = `800 28px ${SANS}`;
       ctx.fillText(initials(c.name), cx + size / 2, cy + size / 2 - 28);
@@ -1085,7 +1086,7 @@
       if (idx >= 0) {
         const before = l.slice(0, idx), mid = l.slice(idx, idx + note.strong.length), after = l.slice(idx + note.strong.length);
         ctx.fillStyle = "#fff"; ctx.fillText(before, x, y); x += ctx.measureText(before).width;
-        ctx.fillStyle = "#e8b923"; ctx.fillText(mid, x, y); x += ctx.measureText(mid).width;
+        ctx.fillStyle = "#DDBA27"; ctx.fillText(mid, x, y); x += ctx.measureText(mid).width;
         ctx.fillStyle = "#fff"; ctx.fillText(after, x, y);
       } else {
         ctx.fillStyle = "#fff";
