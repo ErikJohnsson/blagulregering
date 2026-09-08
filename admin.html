@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Citatredaktör – Blågul regering</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f5f6f8; color: #1a1a1a; padding: 20px; }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .intro { color: #555; font-size: 14px; margin-bottom: 24px; }
+  .stats { font-size: 14px; margin-bottom: 20px; color: #333; }
+  .stats b { color: #0b1f3a; }
+  .card {
+    background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 16px;
+    margin-bottom: 12px; transition: border-color .15s;
+  }
+  .card:focus-within { border-color: #1F4FCB; }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-weight: 800; font-size: 12px; color: #333; flex: none;
+  }
+  .name { font-weight: 700; font-size: 15px; }
+  .role { font-size: 12px; color: #777; }
+  .badge { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; margin-left: 6px; }
+  .has-quote .badge { background: #d4edda; color: #155724; }
+  .no-quote .badge { background: #fff3cd; color: #856404; }
+  .fields { display: grid; gap: 8px; }
+  label { font-size: 12px; font-weight: 600; color: #555; display: block; margin-bottom: 2px; }
+  textarea, input[type=text], input[type=url] {
+    width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
+    font-size: 14px; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  input[type=url] { font-size: 13px; }
+  .actions { display: flex; gap: 10px; margin-top: 24px; position: sticky; bottom: 0; background: #f5f6f8; padding: 16px 0; border-top: 1px solid #ddd; }
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-primary { background: #0b1f3a; color: #fff; }
+  .btn-primary:hover { background: #1a3a6a; }
+  .btn-secondary { background: #e8e8e8; color: #333; }
+  .btn-secondary:hover { background: #d0d0d0; }
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #155724; color: #fff; padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .filter { margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter button {
+    padding: 6px 14px; border: 1px solid #ccc; border-radius: 20px; background: #fff;
+    font-size: 13px; cursor: pointer; font-weight: 600;
+  }
+  .filter button.active { background: #0b1f3a; color: #fff; border-color: #0b1f3a; }
+</style>
+</head>
+<body>
+
+<h1>Citatredaktör</h1>
+<p class="intro">Redigera citat och källor for SD-kandidater. Tryck "Kopiera data.js" och klistra in i filen.</p>
+<div class="stats" id="stats"></div>
+<div class="filter" id="filter"></div>
+<div id="cards"></div>
+<div class="actions">
+  <button class="btn btn-primary" id="copyBtn">Kopiera data.js till urklipp</button>
+  <button class="btn btn-secondary" id="downloadBtn">Ladda ner data.js</button>
+</div>
+<div class="toast" id="toast">Kopierat!</div>
+
+<script src="data.js"></script>
+<script>
+(function() {
+  "use strict";
+  const sdCandidates = CANDIDATES.filter(c => c.party === "SD");
+  const container = document.getElementById("cards");
+  const statsEl = document.getElementById("stats");
+  const filterEl = document.getElementById("filter");
+
+  let filter = "all";
+
+  function updateStats() {
+    const withQ = sdCandidates.filter(c => c.quote && c.quote.text.trim()).length;
+    statsEl.innerHTML = "<b>" + withQ + " / " + sdCandidates.length + "</b> har citat";
+  }
+
+  function renderFilter() {
+    const btns = [
+      { key: "all", label: "Alla" },
+      { key: "has", label: "Har citat" },
+      { key: "missing", label: "Saknar citat" },
+    ];
+    filterEl.innerHTML = "";
+    btns.forEach(b => {
+      const btn = document.createElement("button");
+      btn.textContent = b.label;
+      if (filter === b.key) btn.classList.add("active");
+      btn.addEventListener("click", () => { filter = b.key; renderFilter(); renderCards(); });
+      filterEl.appendChild(btn);
+    });
+  }
+
+  function renderCards() {
+    container.innerHTML = "";
+    sdCandidates.forEach((c, i) => {
+      const hasQ = c.quote && c.quote.text.trim();
+      if (filter === "has" && !hasQ) return;
+      if (filter === "missing" && hasQ) return;
+
+      const card = document.createElement("div");
+      card.className = "card " + (hasQ ? "has-quote" : "no-quote");
+
+      const q = c.quote || { text: "", source: "", url: "" };
+
+      card.innerHTML =
+        '<div class="card-head">' +
+          '<div class="avatar" style="background:#E8B923">' + c.name.split(" ").map(n => n[0]).join("") + '</div>' +
+          '<div><span class="name">' + c.name + '</span><span class="badge">' + (hasQ ? "har citat" : "saknar citat") + '</span>' +
+          '<br><span class="role">' + (c.role || "") + '</span></div>' +
+        '</div>' +
+        '<div class="fields">' +
+          '<div><label>Citat</label><textarea data-idx="' + i + '" data-field="text">' + escHtml(q.text) + '</textarea></div>' +
+          '<div><label>Källa (t.ex. "SVT Nyheter, mars 2021")</label><input type="text" data-idx="' + i + '" data-field="source" value="' + escAttr(q.source) + '"></div>' +
+          '<div><label>URL</label><input type="url" data-idx="' + i + '" data-field="url" value="' + escAttr(q.url) + '"></div>' +
+        '</div>';
+
+      card.querySelectorAll("[data-idx]").forEach(el => {
+        el.addEventListener("input", () => {
+          const idx = +el.dataset.idx;
+          const field = el.dataset.field;
+          if (!sdCandidates[idx].quote) sdCandidates[idx].quote = { text: "", source: "", url: "" };
+          sdCandidates[idx].quote[field] = el.value;
+          updateStats();
+        });
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function escAttr(s) { return s.replace(/&/g,"&amp;").replace(/"/g,"&quot;"); }
+
+  function generateDataJs() {
+    let lines = [];
+    lines.push("// Ministerposter = regeringen Kristerssons nuvarande departement/titlar (24 poster, 11 departement).");
+    lines.push("// Kandidatpoolen är ett kurerat urval av framträdande riksdagsledamöter / partiledningar /");
+    lines.push("// gruppledare / talespersoner för M, L, KD och SD (partistyrelser, riksdagsgrupper, aktuella");
+    lines.push("// statsråd) — inte en fullständig lista över samtliga riksdagsledamöter.");
+    lines.push("");
+    lines.push("const PARTIES = {");
+    for (const [k, v] of Object.entries(PARTIES)) {
+      lines.push('  ' + k + ':  { name: "' + v.name + '",'.padEnd(30) + 'color: "' + v.color + '" },');
+    }
+    lines.push("};");
+    lines.push("");
+    lines.push("const PORTFOLIOS = [");
+    let prevDept = "";
+    PORTFOLIOS.forEach((p, i) => {
+      if (p.dept !== prevDept && i > 0) lines.push("");
+      prevDept = p.dept;
+      let s = '  { id: ' + JSON.stringify(p.id) + ','.padEnd(16 - p.id.length) +
+              'dept: ' + JSON.stringify(p.dept) + ','.padEnd(55 - p.dept.length) +
+              'title: ' + JSON.stringify(p.title);
+      if (p.fixed) s += ',\n    fixed: ' + JSON.stringify(p.fixed) + ' },';
+      else s += ' },';
+      lines.push(s);
+    });
+    lines.push("];");
+    lines.push("");
+    lines.push("const CANDIDATES = [");
+
+    let currentParty = "";
+    CANDIDATES.forEach(c => {
+      if (c.party !== currentParty) {
+        if (currentParty) lines.push("");
+        lines.push("  // --- " + c.party + " ---");
+        currentParty = c.party;
+      }
+      let s = '  { id: ' + JSON.stringify(c.id) + ','.padEnd(24 - c.id.length) +
+              'name: ' + JSON.stringify(c.name) + ','.padEnd(38 - c.name.length) +
+              'party: "' + c.party + '", role: ' + JSON.stringify(c.role);
+      if (c.quote && c.quote.text.trim()) {
+        s += ',\n    quote: { text: ' + JSON.stringify(c.quote.text) +
+             ', source: ' + JSON.stringify(c.quote.source) +
+             ', url: ' + JSON.stringify(c.quote.url) + ' } },';
+      } else {
+        s += ' },';
+      }
+      lines.push(s);
+    });
+    lines.push("];");
+    lines.push("");
+
+    lines.push("// Namn som alltid ska ingå vid slumpmässig tillsättning (\"Slumpa fram kandidater\").");
+    lines.push("const GUARANTEED_SD_IDS = [");
+    GUARANTEED_SD_IDS.forEach(id => lines.push('  "' + id + '",'));
+    lines.push("];");
+    lines.push("");
+
+    lines.push("const EXAMPLE_FILL = {");
+    for (const [k, v] of Object.entries(EXAMPLE_FILL)) {
+      lines.push('  ' + (k + ':').padEnd(13) + '"' + v + '",');
+    }
+    lines.push("};");
+    lines.push("");
+
+    lines.push("const EXAMPLE_FILL_NO_L_OVERRIDES = {");
+    for (const [k, v] of Object.entries(EXAMPLE_FILL_NO_L_OVERRIDES)) {
+      lines.push('  ' + (k + ':').padEnd(13) + '"' + v + '",');
+    }
+    lines.push("};");
+    lines.push("");
+
+    return lines.join("\n");
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2000);
+  }
+
+  document.getElementById("copyBtn").addEventListener("click", () => {
+    const text = generateDataJs();
+    navigator.clipboard.writeText(text).then(() => showToast("Kopierat till urklipp!"));
+  });
+
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+    const text = generateDataJs();
+    const blob = new Blob([text], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.js";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  updateStats();
+  renderFilter();
+  renderCards();
+})();
+</script>
+</body>
+</html>

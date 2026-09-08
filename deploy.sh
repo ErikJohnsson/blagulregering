@@ -24,7 +24,9 @@ set ftp:ssl-force true
 set ssl:verify-certificate yes
 cd $DIR
 mkdir -p fonts
+mkdir -p photos
 mput -O fonts fonts/archivo-black.woff2
+mput -O photos photos/*.jpg
 mput index.html style.css script.js data.js favicon.svg apple-touch-icon.png og-image.png robots.txt sitemap.xml .htaccess
 bye
 LFTP

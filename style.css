@@ -348,6 +348,9 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
   font-size: 12px;
   color: #fff;
 }
+.avatar-img {
+  width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+}
 .avatar.SD, .party-tag.SD { color: var(--gold-ink); }
 .person-name { font-weight: 700; font-size: 14px; }
 .person-role { font-size: 12px; color: var(--muted); }
@@ -360,6 +363,27 @@ body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier
   letter-spacing: .02em;
   vertical-align: 1px;
 }
+
+.post-quote {
+  display: block;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.45;
+  border-left: 2px solid var(--gold);
+  padding-left: 10px;
+  margin-top: 2px;
+}
+.post-quote-source {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  margin-top: 3px;
+}
+.post-quote-source:hover { color: var(--navy); }
 
 .post-empty { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; font-weight: 600; }
 .post-empty .avatar-empty { width: 36px; height: 36px; border-radius: 50%; border: 2px dashed #b7c2d6; flex: none; }

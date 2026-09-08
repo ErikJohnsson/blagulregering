@@ -13,7 +13,7 @@ RewriteRule ^ https://blagulregering.se%{REQUEST_URI} [L,R=301]
   <FilesMatch "\.html$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
-  <FilesMatch "\.(css|js|svg|png|xml|txt)$">
+  <FilesMatch "\.(css|js|svg|png|xml|txt|jpg)$">
     Header set Cache-Control "public, max-age=600"
   </FilesMatch>
   <FilesMatch "\.woff2$">

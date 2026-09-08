@@ -245,6 +245,21 @@
       .join("");
   }
 
+  function avatarEl(candidate) {
+    var av = el("span", "avatar");
+    var img = document.createElement("img");
+    img.src = "photos/" + candidate.id + ".jpg";
+    img.alt = "";
+    img.loading = "lazy";
+    img.className = "avatar-img";
+    img.onerror = function () {
+      img.remove();
+      av.textContent = initials(candidate.name);
+    };
+    av.appendChild(img);
+    return av;
+  }
+
   function surname(name) {
     const parts = name.trim().split(" ");
     return parts[parts.length - 1];
@@ -393,7 +408,7 @@
       card.classList.add(c.party);
       const row = el("span", "post-person");
 
-      const av = el("span", "avatar", initials(c.name));
+      const av = avatarEl(c);
       av.setAttribute("aria-hidden", "true");
       paintParty(av, c.party);
       row.appendChild(av);
@@ -408,6 +423,20 @@
       info.appendChild(roleLine);
       row.appendChild(info);
       card.appendChild(row);
+
+      if (c.quote) {
+        const q = el("span", "post-quote");
+        q.appendChild(document.createTextNode("“" + c.quote.text + "”"));
+        const src = document.createElement("a");
+        src.className = "post-quote-source";
+        src.href = c.quote.url;
+        src.target = "_blank";
+        src.rel = "noopener";
+        src.textContent = c.quote.source;
+        src.addEventListener("click", function(e) { e.stopPropagation(); });
+        q.appendChild(src);
+        card.appendChild(q);
+      }
     } else {
       const empty = el("span", "post-empty");
       const av = el("span", "avatar-empty");
@@ -718,7 +747,7 @@
       row.setAttribute("aria-describedby", "modalBlocked");
     }
 
-    const av = el("span", "avatar", initials(c.name));
+    const av = avatarEl(c);
     av.setAttribute("aria-hidden", "true");
     paintParty(av, c.party);
     row.appendChild(av);

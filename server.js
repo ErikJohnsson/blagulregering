@@ -30,6 +30,7 @@ const MIME = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
   ".ico": "image/x-icon",
   ".txt": "text/plain; charset=utf-8",
   ".woff2": "font/woff2",
@@ -46,7 +47,8 @@ const server = http.createServer((req, res) => {
   }
   if (reqPath === "/") reqPath = "/index.html";
 
-  if (!PUBLIC_FILES.has(reqPath)) {
+  const isPhoto = reqPath.startsWith("/photos/") && reqPath.endsWith(".jpg") && !reqPath.includes("..");
+  if (!PUBLIC_FILES.has(reqPath) && !isPhoto) {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Not found");
     return;
