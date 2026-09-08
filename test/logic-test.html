@@ -11,9 +11,10 @@ const byName=(n)=>CANDIDATES.find(c=>c.name===n);
 const partyOf=(n)=>byName(n)?.party;
 const openSlot=(id)=>{ $('.post[data-slot="'+id+'"]').click(); };
 const esc=()=>d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));
-const pick=(name)=>{ const row=$$('.candidate-row').find(r=>r.querySelector('.person-name').textContent===name); if(!row) return 'norow'; if(row.disabled) return 'disabled'; row.click(); return 'clicked'; };
+const findRow=(name)=>$$('.candidate-row').find(r=>r.querySelector('.person-name').textContent===name);
+const pick=(name)=>{ let row=findRow(name); if(!row && $('.candidate-showall')){ $('.candidate-showall').click(); row=findRow(name); } if(!row) return 'norow'; if(row.disabled||row.getAttribute('aria-disabled')==='true') return 'disabled'; row.click(); return 'clicked'; };
 const load=()=>new Promise(r=>{const f=document.getElementById('f'); f.onload=()=>{w=f.contentWindow; d=f.contentDocument; r();}; });
-const reload=()=>{ const f=document.getElementById('f'); const p=load(); f.contentWindow.location.reload(); return p; };
+const reload=(keepHash)=>{ const f=document.getElementById('f'); const p=load(); if(!keepHash) f.contentWindow.history.replaceState(null,'',f.contentWindow.location.pathname); f.contentWindow.location.reload(); return p; };
 const counts=()=>{const s=slots(); const c={M:0,L:0,KD:0,SD:0,empty:0}; for(const v of Object.values(s)){ if(!v) c.empty++; else c[partyOf(v)]++; } return c;};
 const dupes=()=>{const v=Object.values(slots()).filter(Boolean); return v.filter((x,i)=>v.indexOf(x)!==i);};
 const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].find(c=>e.classList.contains(c)));
@@ -35,10 +36,12 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  openSlot('eu');
  ok('picker opens with title', !$('#modalBackdrop').hidden && $('#modalTitle').textContent==='EU-minister');
  ok('picker: page behind is inert', $('main').inert===true && $('header').inert===true);
- ok('picker: no L candidates and no L tab when L off', !$$('.candidate-row .person-name').some(e=>partyOf(e.textContent)==='L') && !$$('.party-tab').some(t=>t.textContent==='L'));
- ok('picker: tabs expose aria-pressed', $$('.party-tab').find(t=>t.textContent==='Alla').getAttribute('aria-pressed')==='true');
+ ok('picker: no L candidates and no L tab when L off', !$$('.candidate-row .person-name').some(e=>partyOf(e.textContent)==='L') && !$$('.party-tab').some(t=>t.dataset.party==='L'));
+ ok('picker: tabs expose aria-pressed', $$('.party-tab').find(t=>t.dataset.party==='ALL').getAttribute('aria-pressed')==='true');
  ok('picker: never offers the fixed PM', !$$('.candidate-row .person-name').some(e=>e.textContent==='Ulf Kristersson'));
- ok('picker: "Alla" group sorted by surname', (()=>{const lis=$$('li'); const start=lis.findIndex(l=>l.textContent==='Alla'); const n=lis.slice(start+1).map(l=>l.querySelector('.person-name')?.textContent).filter(Boolean).map(x=>x.split(' ').pop()); return n.length>20 && n.every((x,i)=>i===0||n[i-1].localeCompare(x,'sv')<=0);})());
+ ok('picker: rest collapsed behind Visa alla', !!$('.candidate-showall') && $('.candidate-showall').textContent.startsWith('Visa alla') && !$$('li').some(l=>l.textContent==='Alla'));
+ $('.candidate-showall').click();
+ ok('picker: "Alla" group sorted by surname after expanding', (()=>{const lis=$$('li'); const start=lis.findIndex(l=>l.textContent==='Alla'); const n=lis.slice(start+1).map(l=>l.querySelector('.person-name')?.textContent).filter(Boolean).map(x=>x.split(' ').pop()); return n.length>20 && n.every((x,i)=>i===0||n[i-1].localeCompare(x,'sv')<=0);})());
  ok('picker: Töm posten hidden for empty slot', $('#clearSlotBtn').hidden);
  ok('picker: suggested group first, with the current EU minister', $('.candidate-group')?.textContent==='Föreslagna för posten' && $$('li').slice(0, $$('li').findIndex(l=>l.textContent==='Alla')).some(l=>l.textContent.includes('Jessica Rosencrantz')), $$('.candidate-group').map(g=>g.textContent).join('|'));
  $('#candidateSearch').value='soder'; $('#candidateSearch').dispatchEvent(new w.Event('input'));
@@ -47,7 +50,7 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  ok('picker: search filters', $$('.candidate-row').length===1 && $('.candidate-row .person-name').textContent==='Jimmie Åkesson', $$('.candidate-row').length);
  ok('assign SD', pick('Jimmie Åkesson')==='clicked' && slots().eu==='Jimmie Åkesson' && sd()==='1' && filled()==='2 / 24');
  ok('picker closes, page no longer inert, focus returns to post card', $('#modalBackdrop').hidden && $('main').inert===false && d.activeElement?.dataset?.slot==='eu', d.activeElement?.outerHTML?.slice(0,60));
- ok('toast shown without undo for a single pick', !$('#toast').hidden && $('#toastMsg').textContent.includes('Åkesson') && $('#toastAction').hidden);
+ ok('toast shown with undo for a single pick', !$('#toast').hidden && $('#toastMsg').textContent.includes('Åkesson') && !$('#toastAction').hidden);
  ok('hero grid: SD seat first', seatClasses('#heroSeats')[0]==='SD' && seatClasses('#heroSeats')[1]==='M');
  // 3 fill non-SD up to cap: PM + 11 more = 12
  const nonSDNames=CANDIDATES.filter(c=>(c.party==='M'||c.party==='KD') && c.id!=='kristersson').map(c=>c.name);
@@ -56,12 +59,15 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  for(let i=0;i<11;i++){ openSlot(openIds[i]); if(pick(nonSDNames[i])==='clicked') placed++; }
  ok('11 non-SD placed (12 incl PM)', placed===11 && counts().M+counts().KD===12 && capLeft()==='0', JSON.stringify(counts())+' '+capLeft());
  ok('cap state at 12 non-SD: gold bar, cap line, empty cards marked only-SD', $('#statusbar').classList.contains('at-cap') && !$('#capLine').hidden && $$('.post.only-sd').length===counts().empty && $('#result').hidden, $$('.post.only-sd').length+' vs '+counts().empty);
+ ok('cap line names SD as the taker and keeps the counts visible', $('#capLine').textContent.includes('Sverigedemokraternas') && $('#capLine').textContent.includes(String(counts().empty)) && w.getComputedStyle($('#statusLine')).display!=='none', $('#capLine').textContent);
  openSlot(openIds[11]);
  ok('at cap: blocked message shown', !$('#modalBlocked').hidden);
- ok('at cap: SD tab preselected for empty post', $$('.party-tab').find(t=>t.textContent==='SD').getAttribute('aria-pressed')==='true');
- $$('.party-tab').find(t=>t.textContent==='Alla').click();
- ok('at cap: non-SD rows disabled and described', $$('.candidate-row').filter(r=>partyOf(r.querySelector('.person-name').textContent)!=='SD').every(r=>r.disabled && r.getAttribute('aria-describedby')==='modalBlocked'));
- ok('at cap: SD rows enabled', $$('.candidate-row').filter(r=>partyOf(r.querySelector('.person-name').textContent)==='SD').every(r=>!r.disabled));
+ ok('at cap: SD tab preselected for empty post', $$('.party-tab').find(t=>t.dataset.party==='SD').getAttribute('aria-pressed')==='true');
+ $$('.party-tab').find(t=>t.dataset.party==='ALL').click();
+ if($('.candidate-showall')) $('.candidate-showall').click();
+ ok('at cap: non-SD rows aria-disabled, described, still focusable', $$('.candidate-row').filter(r=>partyOf(r.querySelector('.person-name').textContent)!=='SD').every(r=>r.getAttribute('aria-disabled')==='true' && r.getAttribute('aria-describedby')==='modalBlocked' && !r.disabled));
+ ok('at cap: tabs show counts and SD tab first', $$('.party-tab').every(t=>t.dataset.party==='ALL' || /\d/.test(t.textContent)) && $('#partyTabs').classList.contains('sd-first'));
+ ok('at cap: SD rows enabled', $$('.candidate-row').filter(r=>partyOf(r.querySelector('.person-name').textContent)==='SD').every(r=>r.getAttribute('aria-disabled')!=='true'));
  ok('at cap: 13th non-SD refused', pick(nonSDNames[11])==='disabled' && counts().M+counts().KD===12);
  ok('at cap: SD still assignable', pick('Henrik Vinge')==='clicked' && slots()[openIds[11]]==='Henrik Vinge');
  // 4 swap non-SD occupant at cap
@@ -70,7 +76,8 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  ok('at cap: swapping occupant non-SD→non-SD allowed', swapRes==='clicked' && slots()[openIds[0]]===nonSDNames[11] && counts().M+counts().KD===12, swapRes);
  // 5 move
  openSlot(openIds[1]);
- const elsewhereRow=$$('.candidate-row').find(r=>r.querySelector('.person-name').textContent===nonSDNames[11]);
+ if($('.candidate-showall')) $('.candidate-showall').click();
+ const elsewhereRow=findRow(nonSDNames[11]);
  ok('picker marks person seated elsewhere', elsewhereRow?.classList.contains('elsewhere') && elsewhereRow.textContent.includes('sitter just nu'));
  pick(nonSDNames[11]);
  ok('moving a person empties old slot', slots()[openIds[0]]===null && slots()[openIds[1]]===nonSDNames[11] && dupes().length===0);
@@ -96,7 +103,10 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  $('#exampleBtn').click();
  ok('example (L off): 24/24, SD 12, no L', filled()==='24 / 24' && counts().SD===12 && counts().L===0, JSON.stringify(counts()));
  ok('complete: result visible, no cap state, CTA visible, toast suppressed', !$('#result').hidden && !$('#statusbar').classList.contains('at-cap') && !$('#shareCta').hidden && d.body.classList.contains('has-cta') && $('#toast').hidden);
- ok('result carries sender line', $('.result-sender').textContent.includes('Centerstudenter'));
+ ok('result carries sender line and save-image button', $('.result-sender').textContent.includes('Centerstudenter') && !!$('#saveImageBtn'));
+ ok('URL hash carries the government', /#g=[0-9a-z-]{48}/.test(w.location.hash), w.location.hash);
+ const sharedHash=w.location.hash; const sharedSlots=JSON.stringify(slots()); w.localStorage.clear(); await reload(true);
+ ok('shared link reopens the same government from the hash alone', JSON.stringify(slots())===sharedSlots && !$('#result').hidden && $('#toast').hidden);
  ok('result headline says 12 av 24', $('#resultTitle').textContent.startsWith('12 av 24'), $('#resultTitle').textContent);
  ok('result grid 24 seats, 12 SD first', seatClasses('#resultSeats').length===24 && seatClasses('#resultSeats').slice(0,12).every(c=>c==='SD'));
  ok('result names SD holders of heavy posts', $('#resultNote').textContent.includes('Justitie') && $('#resultNote').textContent.includes('Tobias Andersson'), $('#resultNote').textContent);
@@ -110,7 +120,7 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  // 12 L on
  $('#lToggle').click(); ok('L toggle on', $('#lToggle').getAttribute('aria-checked')==='true');
  $('#exampleBtn').click(); ok('example (L on): 4 L, SD 12', counts().L===4 && counts().SD===12, JSON.stringify(counts()));
- openSlot('eu'); ok('picker shows L candidates and L tab when on', $$('.candidate-row .person-name').some(e=>partyOf(e.textContent)==='L') && $$('.party-tab').some(t=>t.textContent==='L')); esc();
+ openSlot('eu'); if($('.candidate-showall')) $('.candidate-showall').click(); ok('picker shows L candidates and L tab when on', $$('.candidate-row .person-name').some(e=>partyOf(e.textContent)==='L') && $$('.party-tab').some(t=>t.dataset.party==='L')); esc();
  // 13 L off → seats emptied, undo offered and works
  $('#lToggle').click(); ok('L off empties L seats', counts().L===0 && counts().empty===4 && counts().SD===12, JSON.stringify(counts()));
  ok('L off toast offers Ångra', !$('#toastAction').hidden && $('#toastMsg').textContent.includes('4 poster'), $('#toastMsg').textContent);
@@ -126,8 +136,8 @@ const seatClasses=(sel)=>$$(sel+' .seat').map(e=>['SD','M','KD','L','empty'].fin
  ok('random x30 (L on): invariants hold and L appears sometimes', bad2.length===0 && sawL);
  // 15 share text
  let captured=null; Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async t=>{captured=t;}}}); w.prompt=(m,t)=>{captured=t;};
- $('#shareBtn').click(); await new Promise(r=>setTimeout(r,50));
- ok('share text leads with the count, ends with link and sender', captured && captured.startsWith('12 av 24 statsråd') && captured.includes('blagulregering.se') && captured.includes('Centerstudenter') && captured.split('\n').filter(l=>/^[A-ZÅÄÖ].*: /.test(l) && !l.startsWith('Bygg')).length===24, (captured||'').split('\n')[0]);
+ $('#shareBtn').click(); for(let i=0;i<40 && !captured;i++) await new Promise(r=>setTimeout(r,50));
+ ok('share text leads with the count, ends with hash link and sender', captured && captured.startsWith('12 av 24 statsråd') && captured.includes('blagulregering.se/#g=') && captured.includes('Centerstudenter') && captured.split('\n').filter(l=>/^[A-ZÅÄÖ].*: /.test(l) && !l.startsWith('Bygg')).length===24, (captured||'').split('\n')[0]);
  // 16 storage edge cases
  w.localStorage.setItem('blagulregering-state-v2','{not json'); await reload();
  ok('corrupt localStorage tolerated', filled()==='1 / 24');

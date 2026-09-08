@@ -150,6 +150,7 @@ button { font: inherit; }
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
     "meter actions"
+    "cap   actions"
     "line  actions";
   gap: 6px 28px;
   align-items: center;
@@ -183,9 +184,9 @@ button { font: inherit; }
   white-space: nowrap;
 }
 .status-item { overflow: hidden; text-overflow: ellipsis; }
-.status-fine { color: #8b93a3; }
+.status-fine { color: #6b7484; }
 .status-cap {
-  grid-area: line;
+  grid-area: cap;
   margin: 0;
   font-size: 14px;
   font-weight: 800;
@@ -195,7 +196,18 @@ button { font: inherit; }
   text-overflow: ellipsis;
 }
 .statusbar.at-cap { background: var(--gold); border-bottom-color: #d4a51a; }
-.statusbar.at-cap .status-line { display: none; }
+.statusbar.at-cap .status-line { color: var(--gold-ink); }
+.statusbar.at-cap .status-item b { color: var(--gold-ink); }
+.statusbar.at-cap .status-sd b { background: var(--gold-ink); color: var(--gold); }
+.statusbar.at-cap .status-fine { color: #6b5a1e; }
+/* Engångspuls på de tomma korten när taket just har nåtts, så att förändringen syns
+   även när korten ligger nedanför skärmen och användaren scrollar dit. */
+@keyframes only-sd-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(232,185,35,0); }
+  35% { box-shadow: 0 0 0 6px rgba(232,185,35,.55); }
+  100% { box-shadow: 0 0 0 0 rgba(232,185,35,0); }
+}
+body.cap-just-reached .post.only-sd { animation: only-sd-pulse 1.4s cubic-bezier(.2,.8,.2,1) 1; }
 .statusbar.at-cap .seg { background: rgba(74,58,5,.18); }
 .statusbar.at-cap .seg.SD { background: var(--gold-ink); }
 .statusbar.at-cap .meter-floor { background: var(--gold-ink); }
@@ -280,7 +292,7 @@ button { font: inherit; }
   text-align: center;
 }
 .seatgrid-result .seat-init { font-size: 16px; line-height: 1; }
-.seatgrid-result .seat-post { font-size: 10px; font-weight: 600; line-height: 1.15; opacity: .9; max-width: 100%; overflow: hidden; }
+.seatgrid-result .seat-post { font-size: 11px; font-weight: 600; line-height: 1.15; opacity: .9; max-width: 100%; overflow: hidden; }
 
 /* ---------- Departments ---------- */
 #departments { padding: 34px 20px 24px; }
@@ -432,6 +444,7 @@ button { font: inherit; }
   cursor: pointer;
 }
 .party-tab[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.party-tabs.sd-first .party-tab[data-party="SD"] { order: -1; }
 
 .candidate-list {
   list-style: none;
@@ -456,7 +469,10 @@ button { font: inherit; }
 }
 .candidate-row:hover { background: #f2f4f9; }
 .candidate-row.selected { background: #eef4ff; }
-.candidate-row:disabled { cursor: not-allowed; opacity: .45; }
+.candidate-row:disabled, .candidate-row[aria-disabled="true"] { cursor: not-allowed; opacity: .45; }
+.candidate-showall { width: 100%; margin: 6px 0 10px; }
+.party-tab .tab-count { font-weight: 600; opacity: .7; margin-left: 4px; }
+.candidate-empty-msg .btn { margin-top: 10px; }
 .candidate-row.elsewhere .person-role { color: var(--amber-ink); }
 .candidate-main { flex: 1; min-width: 0; }
 .candidate-main .person-name { display: block; }
@@ -497,6 +513,7 @@ button { font: inherit; }
   display: flex;
   align-items: center;
   gap: 12px;
+  width: max-content;
   max-width: calc(100vw - 32px);
 }
 .toast[hidden] { display: none; }
@@ -507,6 +524,7 @@ button { font: inherit; }
   font-weight: 800;
   font-size: 12px;
   padding: 5px 12px;
+  white-space: nowrap;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -517,8 +535,7 @@ body.has-cta .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .header-grid { grid-template-columns: 1fr; gap: 24px; }
-  .seatgrid-hero { grid-template-columns: repeat(12, 1fr); grid-auto-rows: 26px; gap: 6px; max-width: 420px; }
-  .seatgrid-hero .seat { font-size: 0; border-radius: 6px; }
+  .seatgrid-hero { display: none; }
 
   .result-inner {
     grid-template-columns: 1fr;
@@ -534,18 +551,23 @@ body.has-cta .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .result-actions { grid-area: actions; }
   .seatgrid-result { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 64px; gap: 6px; margin: 14px 0 6px; }
   .seatgrid-result .seat-init { font-size: 14px; }
-  .seatgrid-result .seat-post { font-size: 10px; }
+  .seatgrid-result .seat-post { font-size: 11px; }
 }
 
 @media (max-width: 720px) {
-  .site-header { padding: 32px 0 28px; }
+  .site-header { padding: 26px 0 22px; }
+  .site-header h1 { margin-bottom: 10px; }
+  .lede { font-size: 16px; }
+  .lswitch-row { margin-top: 14px; }
+  .sender { margin-top: 16px; font-size: 12px; }
   .statusbar-inner {
     grid-template-columns: 1fr;
-    grid-template-areas: "meter" "line" "actions";
+    grid-template-areas: "meter" "cap" "line" "actions";
     gap: 6px;
     padding: 10px 16px;
   }
   .status-line { gap: 0 12px; }
+  .status-cap { white-space: normal; font-size: 13px; line-height: 1.3; }
   body.has-cta #statusActions { display: none; }
   .modal-controls { order: 2; border-top: 1px solid var(--line); }
   .candidate-list { order: 1; }
@@ -555,6 +577,11 @@ body.has-cta .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .hide-mobile { display: none; }
   #departments { padding-bottom: 8px; }
   body.has-cta #departments { padding-bottom: 72px; }
+}
+
+@media (max-width: 340px) {
+  .status-line { font-size: 11px; gap: 0 8px; }
+  .statusbar-inner { padding: 8px 12px; }
 }
 
 @media (pointer: coarse) {

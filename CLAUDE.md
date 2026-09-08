@@ -16,6 +16,12 @@ statsråd måste vara SD. Läs `README.md` för hur logiken fungerar.
 - Nya publika filer ska in på tre ställen: `PUBLIC_FILES` i `server.js`, `FILES` i `deploy.sh`
   och fillistan i README.
 - Avsändaren är Centerstudenter och ska stå i hero, resultatkort, footer och deltext.
+- Budskapet: poängen är att SD får posterna, inte att M/KD "tar slut". M, KD, L och SD är ett lag
+  (Tidöpartierna). Skriv "resten blir SD:s"/"SD tar …", inte som en förlust för M/KD.
+- Beslutat och inte uppe för omprövning: startläget är en tom byggare (inte förifylld) och
+  "Fyll i ett exempel" förblir primärknapp.
+- Om `CANDIDATES` ändras (ordning eller antal) bryts gamla delade länkar: hashen kodar
+  kandidatens index. Lägg nya kandidater sist.
 - Designgranskning: `.impeccable/critique/` innehåller kritikerna (två körningar 8 sep 2026, 24/36).
   Kör `$impeccable critique` igen efter större UI-ändringar.
 - Allt politiskt innehåll (personer, roller, poster) ligger i `data.js`. Ändra aldrig namn eller
@@ -23,7 +29,7 @@ statsråd måste vara SD. Läs `README.md` för hur logiken fungerar.
   kampanjsajt om verkliga personer.
 
 ## Verifiering
-- `npm test` kör 66 end-to-end-tester mot den riktiga sidan i headless Chrome (`test/run.sh`).
+- `npm test` kör 71 end-to-end-tester mot den riktiga sidan i headless Chrome (`test/run.sh`).
   Kör alltid efter ändringar i `script.js`, `data.js` eller `index.html`. Lägg till ett test i
   `test/logic-test.html` när du lagar en bugg eller lägger till en regel.
 - `node --check script.js && node --check data.js` efter varje JS-ändring.

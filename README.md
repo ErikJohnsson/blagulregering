@@ -45,14 +45,21 @@ Eller öppna `index.html` direkt i webbläsaren; det fungerar också eftersom in
 * **Taket**: när 12 poster (inkl. PM) är M/KD/L byter statusraden till gult med raden
   "Taket är nått", tomma kort får klassen `only-sd`, och väljaren öppnar på SD-fliken.
 * **Föreslagna**: väljaren lyfter först kandidater vars roll matchar posten (`POST_KEYWORDS`
-  + posttiteln), sedan "Alla" sorterade på efternamn. Sökningen viker ihop diakritiska tecken.
+  + posttiteln); resten ligger bakom "Visa alla N namn", sorterade på efternamn. Sökningen viker
+  ihop diakritiska tecken. Partiflikarna visar antal; SD-fliken läggs först när färre än tre
+  M/KD-platser är kvar. Blockerade rader är `aria-disabled` (fokuserbara) i stället för `disabled`.
 * **Avsändare**: "En kampanj från Centerstudenter" i hero, resultatkort, footer, deltext och
   metabeskrivningar.
 * **Resultat**: när alla 24 poster är fyllda visas `#result` under statusraden: rubrik med
   SD-antalet, ett 24-rutors sätesgaller (SD först), vilka tunga departement SD håller
   (`HEAVY_POSTS`) och dela-knappen. På mobil visas dessutom en fast dela-knapp längst ner.
-* **Dela**: systemets delningsmeny på mobil (`navigator.share`), annars urklipp. Texten inleds med
-  SD-antalet och slutar med länken.
+* **Dela**: systemets delningsmeny på mobil (`navigator.share`) med resultatkortet som PNG
+  (1080×1080, ritas i `renderShareImage` på ett `<canvas>`) när regeringen är komplett; annars
+  urklipp. Texten inleds med SD-antalet och slutar med länken och avsändaren. "Spara som bild"
+  laddar ner samma PNG.
+* **Länk med tillstånd**: regeringen kodas i adressens hash (`#g=<48 tecken>&l=1`, se
+  `encodeState`/`decodeState`). En delad länk öppnar samma regering och scrollar till resultatet;
+  en ren adress använder `localStorage`. Hashen uppdateras vid varje ändring.
 * **Sätesgallren** (hero, statusrad, resultat) ritas av `renderSeatGrid`/`renderMeter` i fast
   ordning: SD från vänster, M/L/KD från höger, tomma i mitten. Strecket i mätaren står vid 12.
 * **Persistens**: `localStorage`-nyckeln `blagulregering-state-v2`. Höj versionen i nyckeln om
@@ -66,7 +73,7 @@ rubriker/ingress/footer). Kandidat-id:n måste vara unika och alla id:n i `EXAMP
 Snabb kontroll efter ändring:
 
 ```sh
-npm test          # 66 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
+npm test          # 71 end-to-end-tester i headless Chrome (kräver Google Chrome installerat)
 ```
 
 Testerna i `test/logic-test.html` laddar den riktiga sidan i en iframe och klickar sig igenom

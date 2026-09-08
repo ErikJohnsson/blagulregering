@@ -35,9 +35,8 @@
     <div class="header-copy">
       <h1>Vem ska sitta i Ulfs nästa regering?</h1>
       <p class="lede">
-        Sätt ihop Ulf Kristerssons nästa regering själv, statsråd för statsråd, med regeringens
-        24 ministerposter. Enda regeln: <strong>minst 12 av 24 måste bli SD.</strong>
-        Precis som i verkligheten finns det ett tak för hur många poster M, KD och L kan dela på.
+        Sätt ihop Ulf Kristerssons nästa Tidöregering själv, statsråd för statsråd.
+        Enda regeln: <strong>minst 12 av 24 måste bli SD.</strong>
       </p>
       <div class="lswitch-row">
         <button type="button" class="switch" id="lToggle" role="switch" aria-checked="false" aria-labelledby="lSwitchLabel">
@@ -62,7 +61,7 @@
       <span class="status-item"><b id="capLeft">11</b> platser kvar <span id="capParties">M/KD</span></span>
       <span class="status-item status-muted"><span id="filledCount">1 / 24</span> tillsatta</span>
     </p>
-    <p class="status-cap" id="capLine" hidden>Taket är nått – alla lediga poster går till SD.</p>
+    <p class="status-cap" id="capLine" hidden></p>
     <div class="status-actions" id="statusActions">
       <button class="btn btn-primary" id="exampleBtn" type="button">Fyll i ett exempel</button>
       <button class="btn btn-ghost" id="randomBtn" type="button">Slumpa en regering</button>
@@ -81,6 +80,7 @@
         <p class="result-note" id="resultNote"></p>
         <div class="result-actions">
           <button class="btn btn-light" id="shareBtn" type="button">Dela din regering</button>
+          <button class="btn btn-ghost-light" id="saveImageBtn" type="button">Spara som bild</button>
           <button class="btn btn-ghost-light" id="resultUndoBtn" type="button" hidden>Ångra</button>
           <button class="btn btn-ghost-light" id="resetBtn" type="button">Börja om</button>
         </div>
@@ -94,7 +94,7 @@
 <main class="wrap" id="departments"></main>
 
 <div class="wrap bottom-actions">
-  <button class="btn btn-ghost" id="resetBottomBtn" type="button">Börja om från början</button>
+  <button class="btn btn-ghost" id="resetBottomBtn" type="button">Börja om</button>
 </div>
 
 <footer class="site-footer">
@@ -130,8 +130,8 @@
     </div>
 
     <div class="modal-blocked" id="modalBlocked" role="status" hidden>
-      Taket är nått: 12 av 24 poster är redan M, KD eller L. Den här posten kan bara gå till
-      SD – eller så frigör du en annan post först.
+      Taket är nått: 12 av 24 poster har redan gått till M, KD eller L. Den här posten blir
+      Sverigedemokraternas – om du inte frigör en annan post först.
     </div>
 
     <div class="modal-controls">
@@ -150,6 +150,8 @@
 <div class="share-cta" id="shareCta" hidden>
   <button class="btn btn-primary" id="shareCtaBtn" type="button">Dela din regering</button>
 </div>
+
+<canvas id="shareCanvas" width="1080" height="1080" hidden aria-hidden="true"></canvas>
 
 <div class="toast" id="toast" role="status" hidden>
   <span id="toastMsg"></span>
