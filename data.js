@@ -162,7 +162,7 @@ const CANDIDATES = [
   { id: "gille",              name: "Sara Gille",                party: "SD", role: "Riksdagsledamot" },
   { id: "christiansson",      name: "Alexander Christiansson",   party: "SD", role: "Riksdagsledamot" },
   { id: "stegrud",            name: "Jessica Stegrud",           party: "SD", role: "Migrations- och rättspolitik",
-    quote: { text: "Talande ändå att det är en svenskfödd kurd och en perser som debatterar en svensk kulturkanon i Aktuellt.", source: "X (Twitter)", url: "https://www.svt.se/nyheter/inrikes/jessica-stegruds-svar-en-spaning-om-var-samtid" } },
+    quote: { text: "Talande ändå att det är en svenskfödd kurd och en perser som debatterar en svensk kulturkanon i Aktuellt.", source: "SVT", url: "https://www.svt.se/nyheter/inrikes/jessica-stegruds-svar-en-spaning-om-var-samtid" } },
   { id: "gellerbrant",        name: "Gustav Gellerbrant",        party: "SD", role: "Chef för SD:s samordningskansli i Regeringskansliet" },
 ];
 
