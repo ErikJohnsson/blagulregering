@@ -305,6 +305,7 @@
   const resultSubEl = document.getElementById("resultSub");
   const resultSeatsEl = document.getElementById("resultSeats");
   const resultNoteEl = document.getElementById("resultNote");
+  const resultQuoteEl = document.getElementById("resultQuote");
   const resultUndoBtn = document.getElementById("resultUndoBtn");
   const shareCtaEl = document.getElementById("shareCta");
   const shareCtaBtn = document.getElementById("shareCtaBtn");
@@ -477,6 +478,22 @@
     return { lead: "Sverigedemokraterna tar ", strong: depts, tail: ": " + joinSv(heavy.map((h) => h.name)) + "." };
   }
 
+  function pickResultQuote() {
+    var heavyIds = HEAVY_POSTS.map(function (h) { return h.id; });
+    var sdCandidates = [];
+    PORTFOLIOS.forEach(function (p) {
+      var occId = state[p.id];
+      if (!occId) return;
+      var c = candidatesById[occId];
+      if (c.party !== "SD" || !c.quote) return;
+      var priority = heavyIds.indexOf(p.id) >= 0 ? 0 : 1;
+      sdCandidates.push({ c: c, post: p, priority: priority });
+    });
+    if (!sdCandidates.length) return null;
+    sdCandidates.sort(function (a, b) { return a.priority - b.priority; });
+    return sdCandidates[0];
+  }
+
   function renderResult(filled, sd) {
     const complete = filled === TOTAL;
     resultEl.hidden = !complete;
@@ -500,6 +517,17 @@
     if (note.lead) resultNoteEl.appendChild(document.createTextNode(note.lead));
     if (note.strong) resultNoteEl.appendChild(el("strong", null, note.strong));
     resultNoteEl.appendChild(document.createTextNode(note.tail));
+
+    var q = pickResultQuote();
+    resultQuoteEl.innerHTML = "";
+    if (q) {
+      resultQuoteEl.hidden = false;
+      resultQuoteEl.appendChild(document.createTextNode("”" + q.c.quote.text + "”"));
+      var cite = el("cite", null, q.c.name + ", din " + q.post.title.toLowerCase());
+      resultQuoteEl.appendChild(cite);
+    } else {
+      resultQuoteEl.hidden = true;
+    }
 
     resultUndoBtn.hidden = !undoSnapshot;
     shareCtaBtn.textContent = `Dela: ${sd} av ${TOTAL} är SD`;
@@ -1011,98 +1039,100 @@
   async function renderShareImage(format) {
     const W = 1080;
     const H = format === "story" ? 1902 : 1350;
-    const PAD = 72;
+    const PAD = 80;
+    var isStory = format === "story";
     shareCanvas.width = W;
     shareCanvas.height = H;
-    const ctx = shareCanvas.getContext("2d");
-    try { await document.fonts.load('400 96px "Archivo Black"'); } catch (e) { /* fallback-typsnitt */ }
-    const DISPLAY = '"Archivo Black", "Arial Black", Impact, sans-serif';
-    const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+    var ctx = shareCanvas.getContext("2d");
+    try { await document.fonts.load('400 120px "Archivo Black"'); } catch (e) { /* fallback */ }
+    var DISPLAY = '"Archivo Black", "Arial Black", Impact, sans-serif';
+    var SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
-    const g = ctx.createLinearGradient(0, 0, W, H);
+    var g = ctx.createLinearGradient(0, 0, W * 0.4, H);
     g.addColorStop(0, "#0b1f3a");
-    g.addColorStop(1, "#1a3a66");
+    g.addColorStop(1, "#122a4d");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
-    const sd = countSD();
-    let y = format === "story" ? 180 : PAD;
+    var sd = countSD();
+    var y = isStory ? 200 : PAD + 10;
     ctx.textBaseline = "top";
 
-    ctx.font = `400 56px ${DISPLAY}`;
-    ctx.fillStyle = "#fff";
-    const headline = "Är det här verkligen";
-    ctx.fillText(headline, PAD, y);
-    y += 66;
-    ctx.fillText("en regering du vill ha?", PAD, y);
-    y += 66 + 20;
+    ctx.font = `400 36px ${SANS}`;
+    ctx.fillStyle = "rgba(255,255,255,.55)";
+    ctx.fillText("Är det här verkligen en regering du vill ha?", PAD, y);
+    y += isStory ? 72 : 60;
 
-    ctx.font = `400 72px ${DISPLAY}`;
+    ctx.font = `400 120px ${DISPLAY}`;
     ctx.fillStyle = "#DDBA27";
-    const num = `${sd} av ${TOTAL}`;
-    ctx.fillText(num, PAD, y);
-    ctx.fillStyle = "#fff";
-    ctx.fillText(" statsråd", PAD + ctx.measureText(num).width, y);
-    y += 80;
-    ctx.fillText(sd === 1 ? "är Sverigedemokrat" : "är Sverigedemokrater", PAD, y);
-    y += 80 + 30;
+    ctx.fillText(sd + " av " + TOTAL, PAD, y);
+    y += 130;
 
-    const cols = 6, gap = 12, size = 130;
-    const gridW = cols * size + (cols - 1) * gap;
-    const gx = Math.round((W - gridW) / 2);
-    const { sd: sdSlots, other, empty } = orderedSlots();
-    const seats = sdSlots.concat(other, empty);
-    seats.forEach((p, i) => {
-      const cx = gx + (i % cols) * (size + gap);
-      const cy = y + Math.floor(i / cols) * (size + gap);
-      const party = partyOfSlot(p.id);
-      roundRect(ctx, cx, cy, size, size, 18);
+    ctx.font = `400 44px ${DISPLAY}`;
+    ctx.fillStyle = "#fff";
+    ctx.fillText(sd === 1 ? "statsråd är Sverigedemokrat" : "statsråd är Sverigedemokrater", PAD, y);
+    y += isStory ? 80 : 68;
+
+    ctx.fillStyle = "#DDBA27";
+    ctx.fillRect(PAD, y, 60, 3);
+    y += isStory ? 40 : 32;
+
+    var cols = 6, gap = 10, size = Math.floor((W - PAD * 2 - gap * (cols - 1)) / cols);
+    var gridW = cols * size + (cols - 1) * gap;
+    var gx = PAD;
+    var { sd: sdSlots, other, empty } = orderedSlots();
+    var seats = sdSlots.concat(other, empty);
+    seats.forEach(function (p, i) {
+      var cx = gx + (i % cols) * (size + gap);
+      var cy = y + Math.floor(i / cols) * (size + gap);
+      var party = partyOfSlot(p.id);
+      roundRect(ctx, cx, cy, size, size, 14);
       if (!party) {
-        ctx.strokeStyle = "rgba(255,255,255,.42)";
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(255,255,255,.25)";
+        ctx.lineWidth = 2;
         ctx.stroke();
         return;
       }
       ctx.fillStyle = PARTIES[party].color;
       ctx.fill();
-      const c = candidatesById[state[p.id]];
+      var c = candidatesById[state[p.id]];
       ctx.fillStyle = PARTIES[party].text;
       ctx.textAlign = "center";
-      ctx.font = `800 28px ${SANS}`;
-      ctx.fillText(initials(c.name), cx + size / 2, cy + size / 2 - 28);
-      ctx.font = `600 16px ${SANS}`;
-      ctx.fillText(SHORT_TITLES[p.id] || p.title, cx + size / 2, cy + size / 2 + 8);
+      ctx.font = `800 32px ${SANS}`;
+      ctx.fillText(initials(c.name), cx + size / 2, cy + size / 2 - 10);
       ctx.textAlign = "left";
     });
-    y += 4 * size + 3 * gap + 30;
+    y += 4 * (size + gap) - gap + (isStory ? 40 : 30);
 
-    const note = heavyNote();
-    ctx.font = `500 26px ${SANS}`;
-    const plain = note.lead + note.strong + note.tail;
-    const lines = wrapText(ctx, plain, W - PAD * 2).slice(0, 3);
-    lines.forEach((l) => {
-      let x = PAD;
-      const idx = note.strong ? l.indexOf(note.strong) : -1;
+    var note = heavyNote();
+    ctx.font = `600 24px ${SANS}`;
+    var plain = note.lead + note.strong + note.tail;
+    var lines = wrapText(ctx, plain, W - PAD * 2).slice(0, 3);
+    lines.forEach(function (l) {
+      var x = PAD;
+      var idx = note.strong ? l.indexOf(note.strong) : -1;
       if (idx >= 0) {
-        const before = l.slice(0, idx), mid = l.slice(idx, idx + note.strong.length), after = l.slice(idx + note.strong.length);
-        ctx.fillStyle = "#fff"; ctx.fillText(before, x, y); x += ctx.measureText(before).width;
-        ctx.fillStyle = "#DDBA27"; ctx.fillText(mid, x, y); x += ctx.measureText(mid).width;
-        ctx.fillStyle = "#fff"; ctx.fillText(after, x, y);
+        var before = l.slice(0, idx), mid = l.slice(idx, idx + note.strong.length), after = l.slice(idx + note.strong.length);
+        ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillText(before, x, y); x += ctx.measureText(before).width;
+        ctx.fillStyle = "#DDBA27"; ctx.font = `700 24px ${SANS}`; ctx.fillText(mid, x, y); x += ctx.measureText(mid).width;
+        ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.font = `600 24px ${SANS}`; ctx.fillText(after, x, y);
       } else {
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = "rgba(255,255,255,.7)";
         ctx.fillText(l, x, y);
       }
       y += 34;
     });
 
-    ctx.font = `600 22px ${SANS}`;
-    ctx.fillStyle = "#a9b6cc";
-    ctx.fillText("blagulregering.se", PAD, H - PAD + 10);
+    ctx.textAlign = "center";
+    ctx.font = `700 20px ${SANS}`;
+    ctx.fillStyle = "rgba(255,255,255,.35)";
+    ctx.fillText("blagulregering.se", W / 2, H - PAD + 6);
+    ctx.textAlign = "left";
 
-    return new Promise((resolve) => shareCanvas.toBlob(function (blob) {
+    return new Promise(function (resolve) { shareCanvas.toBlob(function (blob) {
       shareCanvas.width = shareCanvas.height = 0;
       resolve(blob);
-    }, "image/png"));
+    }, "image/png"); });
   }
 
   async function share() {
